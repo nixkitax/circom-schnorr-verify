@@ -1,6 +1,6 @@
 # circom-schnorr-verify
 Project Title: circom-schnorr-verify
-![logo](/images/logo-color.svg)
+![logo](/images/logo-color.svg | width=300)
 
 # Project Description:
 
