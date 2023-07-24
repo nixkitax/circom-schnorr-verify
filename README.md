@@ -1,11 +1,10 @@
+<br>
+<p align="center">
+  <img src="./images/logo.png" width="200" height="200">
+</p>
+<br>
+
 # circom-schnorr-verify
-
-<br>
-<img src="./images/logo.png" width="300" height="300" style="text-align: center">
-<br>
-
-# Project Description:
-
 The "circom-schnorr-verify" project aims to create a cryptographically secure proof using the circom library and zk-SNARK technology to verify the statement "I know a Schnorr signature associated with a public key belonging to a group with at least two public keys." The proof leverages the power of zero-knowledge proofs to demonstrate knowledge of a Schnorr signature without revealing any sensitive information.
 
 # How It Works:
