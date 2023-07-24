@@ -1,7 +1,7 @@
 # circom-schnorr-verify
 
 <br>
-<img src="./images/logo.png" width="300" height="300" style="text-align: center">
+<img src="./images/logo.png" width="200" height="200" style="text-align: center">
 <br>
 
 # Project Description:
