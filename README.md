@@ -55,7 +55,7 @@ foobar.singularize('phenomena')
 
 # License:
 
-This project is licensed under the GPL-3.0 license. See the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GPL-3.0 license. See the [LICENSE](LICENSE) file for details.
 
 Please feel free to modify this readme according to your specific project needs and context.
 
