@@ -1,13 +1,8 @@
 # circom-schnorr-verify
-<<<<<<< HEAD
 
 <br>
 <img src="./images/logo.png" width="300" height="300" style="text-align: center">
 <br>
-=======
-Project Title: circom-schnorr-verify
-![logo](/images/logo-color.svg | width=300)
->>>>>>> f124c5875a4fb9fb45de256e250146e8dfe2cf8d
 
 # Project Description:
 
