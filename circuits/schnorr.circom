@@ -1,26 +1,26 @@
 pragma circom 2.1.6;
 
 include "../node_modules/circomlib/circuits/bitify.circom";
-include "bigint.circom";
 include "secp256k1_func.circom";
 include "secp256k1_utils.circom";
-
-/*
-#todo: 
-input:
-- Messaggio originale (testo o dati) che è stato firmato: denotato come message.
-- Firma di Schnorr composta da due componenti:
-    - Il valore della firma (r): denotato come r.
-    - Il valore della chiave pubblica (P): denotato come P.
-- La sfida generata dal verificatore (e): denotato come e. Nella firma di Schnorr, 
-  questa sfida viene generata utilizzando la funzione hash crittografica (ad esempio SHA-256) del messaggio firmato.
-"*/
     
 template VerifySchnorrSignature() {
-    signal message, r, P, e;
+    /*
+        Definition:
+            - message: original signed messsage;
+            - r: value of the signature;
+            - P: value of public key;
+            - e: value of the challenge by the verifier.
+        The circuit produces an ouput called isValid, which indicates whether 
+        the Schnorr signature is valid or not with respect to the publick key P.
+    
+    signal input message;  
+    signal input r;
+    signal input P;
+    signal input e;
     signal isValid;
 
-    // Calcola l'hash crittografico del messaggio firmato
+
     signal hashedMessage;
     hashedMessage <== hash.hash(message);
 
@@ -39,9 +39,17 @@ template VerifySchnorrSignature() {
     isValid <== hashed_R_plus_eP === hashedMessage;
 
     output isValid;
+    */
+    signal input a;
+    signal output b;
+
+    b <== a;
+    log("just to try");
 }
 
-component Main() {
+component main = VerifySchnorrSignature();
+
+    /*
     signal message = 0x12345678; // Inserisci il messaggio firmato
     signal r = 0xdeadbeef; // Inserisci il valore della firma (r)
     signal P = 0xabcdef01; // Inserisci il valore della chiave pubblica (P)
@@ -59,4 +67,4 @@ component Main() {
 
     // Output del risultato della verifica
     output isValid;
-}
+    */
