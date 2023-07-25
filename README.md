@@ -38,21 +38,6 @@ The circom-schnorr-verify project is experimental and not production-ready. It i
 pip install foobar
 ```
 
-## Usage
-
-```python
-import foobar
-
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
-```
-
 # License:
 
 This project is licensed under the GPL-3.0 license. See the [LICENSE](LICENSE) file for details.
