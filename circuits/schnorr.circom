@@ -1,10 +1,11 @@
 pragma circom 2.1.6;
 
-include "../node_modules/circomlib/circuits/bitify.circom";
-include "secp256k1_func.circom";
-include "secp256k1_utils.circom";
+include "./circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/bitify.circom";
+
+
     
-template VerifySchnorrSignature() {
+template verifySchnorrSignature() {
     /*
         Definition:
             - message: original signed messsage;
@@ -13,7 +14,9 @@ template VerifySchnorrSignature() {
             - e: value of the challenge by the verifier.
         The circuit produces an ouput called isValid, which indicates whether 
         the Schnorr signature is valid or not with respect to the publick key P.
-    
+    */
+    signal input pubKeys[10]; //set delle chiavi pubbliche conosciute
+    signal input signatureSchnorr; //firma di schnorr
     signal input message;  
     signal input r;
     signal input P;
@@ -49,22 +52,3 @@ template VerifySchnorrSignature() {
 
 component main = VerifySchnorrSignature();
 
-    /*
-    signal message = 0x12345678; // Inserisci il messaggio firmato
-    signal r = 0xdeadbeef; // Inserisci il valore della firma (r)
-    signal P = 0xabcdef01; // Inserisci il valore della chiave pubblica (P)
-    signal e = 0x98765432; // Inserisci il valore della sfida generata dal verificatore (e)
-
-    signal isValid;
-
-    VerifySchnorrSignature() verif {
-        .message = message,
-        .r = r,
-        .P = P,
-        .e = e,
-        .isValid = isValid,
-    }
-
-    // Output del risultato della verifica
-    output isValid;
-    */

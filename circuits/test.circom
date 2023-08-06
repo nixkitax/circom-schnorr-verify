@@ -1,21 +1,14 @@
 pragma circom 2.1.6;
-/*
-include "../node_modules/circomlib/circuits/bitify.circom";
-include "secp256k1_func.circom";
-include "secp256k1_utils.circom";
-*/
 
-template VerifySchnorrSignature() {
-    signal input a;
-    signal output b;
+include "./circomlib/circuits/sha256/sha256.circom";
 
-    b <== a;
-    log("just to try");
+template hashing(){
+    signal input in[6];
+    signal output out[256];
+
+    component SHA = Sha256(6);
+    SHA.in <== in;
+    out <== SHA.out;
 }
 
-component main = VerifySchnorrSignature();
-/* 
-proof.input =  { 
-   "a":3
-}
-*/
+component main = hashing();
