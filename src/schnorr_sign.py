@@ -45,16 +45,19 @@ def main():
         if circom:
             try:
                 users = json.load(open("users.json", "r"))["users"]
+                numkeys = len(users)
                 result = {
-                "message": originalmess,
-                "signature": sig.hex(),
-                "public_keys": [user["publicKey"] for user in users]
+                    "message": originalmess,
+                    "signature": sig.hex(),
+                    "numKeys" : numkeys,
+                    "public_keys": [user["publicKey"] for user in users]
                 }
                 create_json(result)
             except Exception:
                 print_fails("[e] Error. File nonexistent, create it with create_keypair.py")
                 sys.exit(2)
         print("> Message =", originalmess)
+        print("> NumKeys =", numkeys)
         print("> Signature =", sig.hex())
         print("> Public key =", users[i]["publicKey"])
         if X is not None: 
