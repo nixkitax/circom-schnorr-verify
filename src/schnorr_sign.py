@@ -31,6 +31,7 @@ def main():
     # Signature
     try:
         # Get message digest
+        originalmess = msg
         M = sha256(msg.encode())
         X = None
         if not ( musig1 or musig2 ):
@@ -45,6 +46,7 @@ def main():
             try:
                 users = json.load(open("users.json", "r"))["users"]
                 result = {
+                "message": originalmess,
                 "signature": sig.hex(),
                 "public_keys": [user["publicKey"] for user in users]
                 }
@@ -52,7 +54,7 @@ def main():
             except Exception:
                 print_fails("[e] Error. File nonexistent, create it with create_keypair.py")
                 sys.exit(2)
-        print("> Message =", M.hex())
+        print("> Message =", originalmess)
         print("> Signature =", sig.hex())
         print("> Public key =", users[i]["publicKey"])
         if X is not None: 
