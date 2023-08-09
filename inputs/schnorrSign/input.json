@@ -1,8 +1,11 @@
 {
-    "message": "//",
-    "signature": "//",
-    "num_keys": 0,
+    "message": "cia",
+    "signature": "0f1861a98f2aa028ab2a750b4ff1f3b360822a8661afe6cae7543cd9d364e47a624aea5cf7e016738deca0256fd5007d4f91f3a437e17ad13bbdcf90311b345f",
+    "numKeys": 4,
     "public_keys": [
-        "//"
+        "0f7a9d92d53e8ce409ae3f748fee1340612296b4d9b13d3524dcc5d16465da65",
+        "13840f067ba010ec897b1e69834f7867554937ee89465f5e37e1457e4030247a",
+        "059274364f0b7304600acccaa29f8b9dc17e9e486290987737c4cd08981a87a6",
+        "09fd77c18d12ec1993d00506673bd56d32970b0b999db458327c70e3e9b156c5"
     ]
 }
