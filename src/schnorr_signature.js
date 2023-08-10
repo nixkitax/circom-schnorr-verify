@@ -7,7 +7,7 @@ let sk = PrivateKey.getRandObj().field;
 let privKey = new PrivateKey(sk);
 //get PublicKey object from privateKey object
 let pubKey = PublicKey.fromPrivate(privKey);
-
+/*
 //PublicKey.p is <Point> Class
 console.log(pubKey.p);
 
@@ -18,4 +18,6 @@ console.log(pubKey.p.y);
 //Get <BigInteger> Class (X, Y)
 console.log(pubKey.p.x.n);
 console.log(pubKey.p.y.n);
+*/
 
+console.log("Chiave privata:", privKey.s);
