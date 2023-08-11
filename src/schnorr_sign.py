@@ -42,6 +42,7 @@ def main():
         if not ( musig1 or musig2 ):
             if i < 0 or i >= len(users):
                 raise RuntimeError("Index is out of range")
+            print("ciao")
             sig = schnorr_sign(M, users[i]["privateKey"])        
         elif musig1:
             sig, X = schnorr_musig_sign(M, users) 
@@ -68,7 +69,7 @@ def main():
         if X is not None: 
             print("> Public aggregate=", X.hex())   
     except Exception as e:
-            print_fails("[e] Exception:", e)
+            print_fails("[e] Exception: ", e)
             sys.exit(2)
 
 if __name__ == "__main__":
