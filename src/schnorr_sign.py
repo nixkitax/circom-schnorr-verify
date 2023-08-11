@@ -9,12 +9,15 @@ def main():
     parser.add_argument('-m', '--message', type=str, required=True, help='Message to be signed')
     parser.add_argument('-i','--index', type=int, help="When single signing, by passing this argument the index of the keypair to use is specified otherwise the first will be used by default")
     parser.add_argument('-c', '--circom', action='store_true', help="makes input file for the (circuit -> circom -> snarkjs)")
+    parser.add_argument('--musig1', action='store_true', help="aggregate signature 2 ")
+
+    parser.add_argument('--musig2', action='store_true', help="aggregate signature 2")
+
     args = parser.parse_args()
     msg = args.message
     circom = args.circom # flag
-    
-    '''musig1 = args.musig1 # flag
-    musig2 = args.musig2 # flag'''
+    musig1 = args.musig1 # flag
+    musig2 = args.musig2 # flag
     
     musig1 = False
     musig2 = False
@@ -60,7 +63,8 @@ def main():
         print("> Signature =", sig.hex())
         print("> Public key =", users[i]["publicKey"])
         print(" ")
-        create_json(result)
+        if circom: 
+            create_json(result)
         if X is not None: 
             print("> Public aggregate=", X.hex())   
     except Exception as e:
