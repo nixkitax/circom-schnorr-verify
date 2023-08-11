@@ -192,6 +192,7 @@ def get_bytes_s_from_sig(sig: bytes) -> int:
 
 # Generate Schnorr signature
 def schnorr_sign(msg: bytes, privateKey: str) -> bytes:
+    print("step1")
     if len(msg) != 32:
         raise ValueError('The message must be a 32-byte array.')
     d0 = int_from_hex(privateKey)
@@ -200,13 +201,21 @@ def schnorr_sign(msg: bytes, privateKey: str) -> bytes:
             'The secret key must be an integer in the range 1..n-1.')
     P = point_mul(G, d0)
     assert P is not None
+    print("step2")
+
     d = d0 if has_even_y(P) else n - d0
     t = xor_bytes(bytes_from_int(d), tagged_hash("BIP0340/aux", get_aux_rand()))
+    print("step3")
+
     k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
+    print("step4")
+
     if k0 == 0:
         raise RuntimeError('Failure. This happens only with negligible probability.')
     R = point_mul(G, k0)
+    
     assert R is not None
+
     k = n - k0 if not has_even_y(R) else k0
     e = int_from_bytes(tagged_hash("BIP0340/challenge", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
     sig = bytes_from_point(R) + bytes_from_int((k + e * d) % n)
