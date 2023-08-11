@@ -1,23 +1,30 @@
-import { PublicKey, PrivateKey } from "babyjubjub";
+import { buildBabyjub } from "circomlibjs";
+import { PublicKey, PrivateKey } from 'babyjubjub';
+import crypto from "crypto"
+import {Scalar} from "ffjavascript"
 
 
-//get PrivateKey object(field, hexstring)
-let sk = PrivateKey.getRandObj().field;
-//get PrivateKey object from field(or hexstring)
-let privKey = new PrivateKey(sk);
-//get PublicKey object from privateKey object
-let pubKey = PublicKey.fromPrivate(privKey);
+(async () => {
+    
+    //const babyJub = await buildBabyjub();
+
+    let sk = PrivateKey.getRandObj().field;
+
+    let privKey = new PrivateKey(sk);
+
+    let pubKey = PublicKey.fromPrivate(privKey);
+
+    console.log(crypto.getCurves)
+
+    
 /*
-//PublicKey.p is <Point> Class
-console.log(pubKey.p);
 
-//return Pub Key (X and Y) --> <Field> Class
-console.log(pubKey.p.x);
-console.log(pubKey.p.y);
+    // Genera una chiave privata casuale
+    const privateKey = babyJub.F.randomScalar();
 
-//Get <BigInteger> Class (X, Y)
-console.log(pubKey.p.x.n);
-console.log(pubKey.p.y.n);
-*/
+    // Calcola la chiave pubblica corrispondente
+    const publicKey = babyJub.mulPointEscalar(babyJub.Generator, privateKey);
 
-console.log("Chiave privata:", privKey.s);
+    console.log('Chiave privata:', privateKey);
+    console.log('Chiave pubblica:', publicKey);*/
+})();
