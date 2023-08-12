@@ -1,0 +1,10 @@
+venv/
+.vscode/
+.pytest_cache/
+.DS_Store
+dist/
+build/
+poseidon/poseidon_hash.egg-info/
+.idea
+poseidon_hash.egg-info
+__pycache__
