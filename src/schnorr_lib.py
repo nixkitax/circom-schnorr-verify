@@ -1,11 +1,10 @@
 from typing import Tuple, Optional
 from binascii import unhexlify
 import sys, os
+import hashlib
 
-#need to fix path for HASH
 
-
-# babyjubjub parameters
+# Elliptic curve parameters
 p = 0x25AAB185D8A0BC4B4503D5E72C16D20778DE6D681A48C91D201E7B726F96AC1E1
 n = 0x32F83E6F649529DAEFAED53D21B94D47D3DF6FC5A862A2D0F45B3E0000000008
 G = (0x16A2F73C0E2A54B7B06B4E881B53B5D3702D6B5E981FAE01F0502E9A6D6A746DE,
@@ -163,6 +162,7 @@ def pubkey_gen_from_hex(seckey: hex) -> bytes:
 # Generate public key (as a point) from an int
 def pubkey_point_gen_from_int(seckey: int) -> Point:
     P = point_mul(G, seckey)
+    print(P)
     assert P is not None 
     return P
 
