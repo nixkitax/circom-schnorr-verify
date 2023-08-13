@@ -1,14 +1,13 @@
 from typing import Tuple, Optional
 from binascii import unhexlify
-import sys, os
 import hashlib
-
+import os
 
 # Elliptic curve parameters
-p = 0x25AAB185D8A0BC4B4503D5E72C16D20778DE6D681A48C91D201E7B726F96AC1E1
-n = 0x32F83E6F649529DAEFAED53D21B94D47D3DF6FC5A862A2D0F45B3E0000000008
-G = (0x16A2F73C0E2A54B7B06B4E881B53B5D3702D6B5E981FAE01F0502E9A6D6A746DE,
-     0x7A6E95D8492C5457B1E5A95DFD26FA17BB3FF08C8084A94FAFB2E3293B3B59D91)
+p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
+n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+G = (0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
+     0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 
 # Points are tuples of X and Y coordinates
 # the point at infinity is represented by the None keyword
@@ -49,22 +48,21 @@ def x(P: Point) -> int:
 def y(P: Point) -> int:
     return P[1]
 
+
+# Point addition
 def point_add(P1: Optional[Point], P2: Optional[Point]) -> Optional[Point]:
     if P1 is None:
         return P2
     if P2 is None:
         return P1
-    
-    x1, y1 = P1
-    x2, y2 = P2
-    
-    d = -121665 * pow(121666, -1, p) % p
-    denom = (1 + d * x1 * x2 * y1 * y2) % p
-    
-    x3 = (x1 * y2 + y1 * x2) * pow(denom, -1, p) % p
-    y3 = (y1 * y2 - d * x1 * x2) * pow(denom, -1, p) % p
-    
-    return x3, y3
+    if (x(P1) == x(P2)) and (y(P1) != y(P2)):
+        return None
+    if P1 == P2:
+        lam = (3 * x(P1) * x(P1) * pow(2 * y(P1), p - 2, p)) % p
+    else:
+        lam = ((y(P2) - y(P1)) * pow(x(P2) - x(P1), p - 2, p)) % p
+    x3 = (lam * lam - x(P1) - x(P2)) % p
+    return x3, (lam * (x(P1) - x3) - y(P1)) % p
 
 
 # Point multiplication
@@ -162,7 +160,6 @@ def pubkey_gen_from_hex(seckey: hex) -> bytes:
 # Generate public key (as a point) from an int
 def pubkey_point_gen_from_int(seckey: int) -> Point:
     P = point_mul(G, seckey)
-    print(P)
     assert P is not None 
     return P
 
@@ -194,7 +191,6 @@ def get_bytes_s_from_sig(sig: bytes) -> int:
 
 # Generate Schnorr signature
 def schnorr_sign(msg: bytes, privateKey: str) -> bytes:
-    print("step1")
     if len(msg) != 32:
         raise ValueError('The message must be a 32-byte array.')
     d0 = int_from_hex(privateKey)
@@ -203,21 +199,13 @@ def schnorr_sign(msg: bytes, privateKey: str) -> bytes:
             'The secret key must be an integer in the range 1..n-1.')
     P = point_mul(G, d0)
     assert P is not None
-    print("step2")
-
     d = d0 if has_even_y(P) else n - d0
     t = xor_bytes(bytes_from_int(d), tagged_hash("BIP0340/aux", get_aux_rand()))
-    print("step3")
-
     k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
-    print("step4")
-
     if k0 == 0:
         raise RuntimeError('Failure. This happens only with negligible probability.')
     R = point_mul(G, k0)
-    
     assert R is not None
-
     k = n - k0 if not has_even_y(R) else k0
     e = int_from_bytes(tagged_hash("BIP0340/challenge", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
     sig = bytes_from_point(R) + bytes_from_int((k + e * d) % n)
