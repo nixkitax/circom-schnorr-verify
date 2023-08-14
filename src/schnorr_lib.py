@@ -208,11 +208,17 @@ def schnorr_sign(msg: bytes, privateKey: str) -> bytes:
     assert R is not None
     k = n - k0 if not has_even_y(R) else k0
     e = int_from_bytes(tagged_hash("BIP0340/challenge", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
+    
+    Lsign = bytes_from_point(R)
+    
+    Rsign = bytes_from_int((k + e * d) % n)
+    
     sig = bytes_from_point(R) + bytes_from_int((k + e * d) % n)
     
     if not schnorr_verify(msg, bytes_from_point(P), sig):
         raise RuntimeError('The created signature does not pass verification.')
-    return sig
+    
+    return sig, Lsign, Rsign
 
 
 # Verify Schnorr signature
