@@ -53,6 +53,7 @@ def main():
                 numkeys = len(users)
                 result = {
                     "message": originalmess,
+                    "nBitsMsg": len(originalmess) * 8,
                     "signature": sig.hex(),
                     "Lsign" : Lsignature.hex(),
                     "Rsign" : Rsignature.hex(),
@@ -63,6 +64,8 @@ def main():
                 sys.exit(2)
         print("> Message =", originalmess)
         print("> Signature =", sig.hex())
+        print("> Left Signature = ", Lsignature.hex())
+        print("> Right Signature = ", Rsignature.hex())
         print("> Public key =", users[i]["publicKey"])
         print(" ")
         if circom: 
