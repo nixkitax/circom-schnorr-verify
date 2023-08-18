@@ -17,11 +17,14 @@ template verifySchnorrSignature(nBitsMsg) {
     signal input Rsign[256]; // S : R_Sign
     signal input pubKey[256];    // pubKey
 
+    signal tagged_hash[126];
     signal e[256];
 
     // Calculate H( R || pubKey || msg):
     // Signature 64 byte / 2  := Lsign, Rsign  
 
+
+    component taggedHash = Sha256(136);
     component shaHash = Sha256(512 + nBitsMsg);
 
     for (var i=0; i<256; i++) {
@@ -32,6 +35,11 @@ template verifySchnorrSignature(nBitsMsg) {
     for (var i=0; i<nBitsMsg; i++) {
         shaHash.in[512+i] <== msg[i];
     }
+    
+    for (var i=0; i<136; i++) {
+        taggedHash.in[512+i] <== msg[i];
+    }
+
 
     // shaHash(R || P || msg) := out[256]
 
