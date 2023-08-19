@@ -3,16 +3,18 @@
   "version": "1.0.0",
   "description": "<br> <p align=\"center\">   <img src=\"./images/logo.png\" width=\"200\" height=\"200\"> </p> <br>",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@noble/curves": "^1.1.0",
-    "babyjubjub": "^1.0.4",
+    "chai": "^4.3.7",
+    "circom_tester": "^0.0.19",
     "circomlib": "^2.0.5",
-    "circomlibjs": "^0.1.7"
+    "circomlibjs": "^0.1.7",
+    "crypto": "^1.0.1",
+    "ffjavascript": "^0.2.60",
+    "path": "^0.12.7"
   }
 }
