@@ -27,18 +27,8 @@ const fromHexString = hexString =>
 const toHexString = bytes =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-function xorBytes(arr1, arr2, arr3) {
-    const result = [];
 
-    const length = Math.min(arr1.length, arr2.length, arr3.length);
-
-    for (let i = 0; i < length; i++) {
-    result.push(arr1[i] ^ arr2[i] ^ arr3[i]);
-    }
-
-    return result;
-}
-
+    
 
 (async () => {
     try {
@@ -52,6 +42,9 @@ function xorBytes(arr1, arr2, arr3) {
         const prvKey = crypto.randomBytes(32);
 
         const prvKeyInt = BigInt(`0x${prvKey.toString("hex")}`);
+
+        console.log("prvKey bigint:", prvKeyInt);
+
 
         console.log(prvKeyInt);
 
@@ -96,19 +89,33 @@ function xorBytes(arr1, arr2, arr3) {
         
         const nonceValue = crypto.randomBytes(32);
 
-        const nonceValueInt = BigInt(`0x${nonceValue.toString("hex")}`);
+        const nonceValueInt = parseInt(nonceValue.toString('hex'), 16);
 
+        // Calcola l'hash SHA-256 della stringa "HOPE2SEEUAGAIN"
         const hashMsg = crypto.createHash('sha256').update("HOPE2SEEUAGAIN").digest('hex');
+        
+        // Calcola l'hash tra nonceValueInt e hashMsg
+        const combinedHash = crypto.createHash('sha256').update(nonceValueInt.toString() + hashMsg).digest('hex');
+        
+        const k = BigInt(parseInt(combinedHash, 16));
 
-        console.log(nonceValueInt);
-        console.log(prvKeyInt)
-        console.log(hashMsg);
 
-        var t = xorBytes(prvKeyInt, hashMsg , nonceValueInt);
+        console.log("Nonce:", nonceValueInt.toString());
+        console.log("Hash del messaggio:", hashMsg);
+        console.log("Hash combinato:", combinedHash);
+        console.log("Hash combinato:", k);
 
-        console.log(t);
+        const R = babyJub.mulPointEscalar(babyJub.Base8, k);
 
-       // const nonceValueInt = BigInt(`0x${nonceValue.toString("hex")}`);
+        console.log("R point of curve :=", R, "[", babyJub.inSubgroup(R) ,"]");
+        const LSign = ArrayBytesToHex(R[0]);
+
+        console.log("LSign: ", LSign);
+
+        
+
+
+               // const nonceValueInt = BigInt(`0x${nonceValue.toString("hex")}`);
     
             
        
