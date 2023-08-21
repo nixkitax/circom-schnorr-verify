@@ -1,5 +1,6 @@
 const fs = require('fs')
 const crypto = require("crypto");
+const { c } = require('circom_tester');
 const buildEddsa = require("circomlibjs").buildEddsa; //babyjubjub, poseidon, OK!
 const buildBabyjub = require("circomlibjs").buildBabyjub;
 const Scalar = require("ffjavascript").Scalar;
@@ -42,28 +43,54 @@ const signSchnorr = (msg, privateKey) => {
 
     if(d0 > order  )
         console.log("prvKey has to be minor that order-1 "); 
-       
+    
+    const pubKey = babyJub.mulPointEscalar(babyJub.Base8, d0);
+    let d;
+   
+    if(hasEvenY(pubKey)) 
+        d = d0;
+    else
+        d = order - d0;
+
+    console.log(pubKey[1] % 2)
+    console.log("d0: " + d0);
+    console.log("d: "+ d);
+    
+    //k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
 
     const nonceValueInt = parseInt(crypto.randomBytes(32).toString('hex'), 16);
     const hashMsg = crypto.createHash('sha256').update("HOPE2SEEUAGAIN").digest('hex');
     const combinedHash = crypto.createHash('sha256').update(hashMsg + nonceValueInt.toString() ).digest('hex');
     
-    const k = BigInt(parseInt(combinedHash, 16)) % order;
+    const k0 = BigInt(parseInt(combinedHash, 16)) % order ;
 
+    console.log(">k0: " + k0);
 
+     
     /*
     console.log("Nonce:", nonceValueInt.toString());
     console.log("Hash del messaggio:", hashMsg);
     console.log("Hash combinato:", combinedHash);
     */
 
-    const r = babyJub.mulPointEscalar(babyJub.Base8, k);
+    const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
 
-    console.log(r);
+    //k = n - k0 if not has_even_y(R) else k0
+
+    let k;
+
+    if (!hasEvenY(r)) {
+        k = order - k0;
+    } else {
+        k = k0;
+    }
+
+    console.log("r subgroup?", babyJub.inSubgroup(r));
 
     const e = crypto.createHash('sha256').update(r[0] + msg).digest('hex');
 
     
+
     const LSign = ArrayBytesToHex(r[0]);
 
 
