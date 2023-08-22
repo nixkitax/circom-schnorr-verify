@@ -22,17 +22,36 @@ const buffer2bits = (buff) => {
 const ArrayBytesToHex = (bytes)  => {
     return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 }
-const fromHexString = hexString =>
-    new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 
-const toHexString = bytes =>
-    bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+const hexToArrayBytes = (hexString)  => {
+  if (hexString.length % 2 !== 0) {
+    throw new Error("has to be even the string ");
+  }
 
-const x = (P) => P[0];
+  const byteLength = hexString.length / 2;
+  const byteArray = new Uint8Array(byteLength);
 
-const y = (P) => P[1]; 
+  for (let i = 0; i < byteLength; i++) {
+    const byteHex = hexString.substr(i * 2, 2);
+    byteArray[i] = parseInt(byteHex, 16);
+  }
 
-const hasEvenY = (P) =>  (P[1] % 2 ) == 0;
+  return byteArray;
+}
+
+const byteArrayToInt = (byteArray) => {
+  let bigIntValue = 0n;
+  for (let i = 0; i < byteArray.length; i++) {
+    bigIntValue += BigInt(byteArray[i]) * (256n ** BigInt(byteArray.length - 1 - i));
+  }
+  return bigIntValue;
+}
+
+const x = (P) => byteArrayToInt(P[0]);
+
+const y = (P) => byteArrayToInt(P[1]); 
+
+const hasEvenY = (P) =>  (y(P) % 2n ) == 0n;
 
 const int_from_hex = (str) => parseInt(str, 16);
 
@@ -40,22 +59,28 @@ const signSchnorr = (msg, privateKey) => {
 
     d0 = BigInt(int_from_hex(privateKey));
 
-    if(d0 > order  )
+    if( d0 > order - 1n)
         console.log("prvKey has to be minor that order-1 "); 
     
-    const P = babyJub.mulPointEscalar(babyJub.Base8, d0);
+    let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
+
+    const pPubKey =  babyJub.packPoint(P);
+
+    console.log("key pub: ", pPubKey);
+
+
+
     let d;
    
     if(hasEvenY(P)) 
         d = d0;
     else
         d = order - d0;
-
-    console.log(pubKey[1]);
-    console.log(pubKey[1] % 2);
-    console.log("d0: " + d0);
-    console.log("d: "+ d);
     
+    console.log("is it even?", hasEvenY(P));
+    console.log("> d: ", d);
+    console.log("> d0:", d0);
+
     //k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
 
     const nonceValueInt = parseInt(crypto.randomBytes(32).toString('hex'), 16);
@@ -64,7 +89,7 @@ const signSchnorr = (msg, privateKey) => {
     
     const k0 = BigInt(parseInt(combinedHash, 16)) % order ;
 
-    console.log(">k0: " + k0);
+    console.log("> k0: " + k0);
 
      
     /*
@@ -113,19 +138,24 @@ const signSchnorr = (msg, privateKey) => {
         const msg = "hello";
         
         const prvKey = crypto.randomBytes(32);
+        
+        const prvKeyHex = ArrayBytesToHex(prvKey);
 
-        const prvKeyInt = BigInt(`0x${prvKey.toString("hex")}`) % order ;
-
-
-        const prvKeyHex = prvKeyInt.toString(16);
+        const prvKeyInt = BigInt(int_from_hex(prvKeyHex)) % order;
 
         const pubKey = babyJub.mulPointEscalar(babyJub.Base8, prvKeyInt);
 
 
+        let prvKeyJson;
+
+        if(hasEvenY(pubKey)) 
+            prvKeyJson = prvKeyInt;
+        else
+            prvKeyJson = order - prvKeyInt;
+
         const pPubKey =  babyJub.packPoint(pubKey);
-
+        console.log("key pub: ", pPubKey);
         const pubKeyHex = ArrayBytesToHex(pPubKey);
-
 
         let pair = {
             "privateKey": prvKeyHex,
