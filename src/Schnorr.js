@@ -36,7 +36,6 @@ const hasEvenY = (P) =>  (P[1] % 2 ) == 0;
 
 const int_from_hex = (str) => parseInt(str, 16);
 
-
 const signSchnorr = (msg, privateKey) => {
 
     d0 = BigInt(int_from_hex(privateKey));
@@ -44,15 +43,16 @@ const signSchnorr = (msg, privateKey) => {
     if(d0 > order  )
         console.log("prvKey has to be minor that order-1 "); 
     
-    const pubKey = babyJub.mulPointEscalar(babyJub.Base8, d0);
+    const P = babyJub.mulPointEscalar(babyJub.Base8, d0);
     let d;
    
-    if(hasEvenY(pubKey)) 
+    if(hasEvenY(P)) 
         d = d0;
     else
         d = order - d0;
 
-    console.log(pubKey[1] % 2)
+    console.log(pubKey[1]);
+    console.log(pubKey[1] % 2);
     console.log("d0: " + d0);
     console.log("d: "+ d);
     
