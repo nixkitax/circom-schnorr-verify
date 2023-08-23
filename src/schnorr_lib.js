@@ -45,9 +45,9 @@ const y = (P) => byte_array_to_int(P[1]);
 
 const has_even_y = (P) => y(P) % 2n == 0n;
 
-const int_from_hex = (str) => parseInt(str, 16);
+const big_int_from_hex = (str) => BigInt(parseInt(str, 16));
 
-const bigint_to_hex = (bigIntValue) => {
+const big_int_to_hex = (bigIntValue) => {
     if (typeof bigIntValue !== 'bigint') {
         throw new Error('Input deve essere un valore BigInt');
     }
@@ -58,6 +58,24 @@ const bigint_to_hex = (bigIntValue) => {
 
     return bigIntValue.toString(16);
 } 
+
+const bytes_from_int = (bigIntValue) => {
+    const byteLength = 32; // Lunghezza desiderata in byte
+    const byteArray = new Uint8Array(byteLength);
+    
+    for (let i = 0; i < byteLength; i++) {
+        byteArray[byteLength - 1 - i] = Number(bigIntValue & BigInt(0xff));
+        bigIntValue >>= BigInt(8);
+    }
+    
+    return byteArray;
+}
+
+
+const count_bytes = (object) => {
+    const byteArray = Buffer.from(object, 'hex');
+    return byteArray.length;
+}
 
 const hex_to_big_int = (hexValue) => {
   
@@ -92,6 +110,20 @@ const return_private_key = async (index) => {
     }
 };
 
+
+const return_public_key = async (index) => {
+    try {
+        const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
+        const jsonData = JSON.parse(data);
+        const publicKey = jsonData.users[0].publicKey;
+
+        return publicKey; // Restituisce la chiave privata
+    } catch (err) {
+        console.error('Errore:', err);
+        throw err; // Rilancia l'errore per gestirlo al livello superiore
+    }
+};
+
 const make_json = (object) => {
     const jsonString = JSON.stringify(object, null, 2);
     fs.writeFileSync("../json/users.json", jsonString);
@@ -108,7 +140,8 @@ const sign_sgnorr = (msg, privateKey) => {
 
     let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
 
-    //console.log("unpacked in sign_sgnorr: ", P);
+    const pP = babyJub.packPoint(P);
+    console.log("unpacked in sign_sgnorr: ", pP);
 
     let d; //private key
 
@@ -122,7 +155,7 @@ const sign_sgnorr = (msg, privateKey) => {
     const nonceValue = crypto.randomBytes(32);
     const hashMsg = crypto
         .createHash("sha256")
-        .update("HOPE2SEEUAGAIN")
+        .update("HOPE2SEEUAGA   IN")
         .digest("hex");
     const combinedHash = crypto
         .createHash("sha256")
@@ -140,6 +173,7 @@ const sign_sgnorr = (msg, privateKey) => {
     */
 
     const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
+
 
     //k = n - k0 if not has_even_y(R) else k0
     //console.log(r);
@@ -163,25 +197,89 @@ const sign_sgnorr = (msg, privateKey) => {
          .digest("hex")) % order;
 
     
-    const LSign = array_bytes_to_hex(r[0]);
+
+    const LSign = bytes_from_int(x(r));
+
+    if (big_int_from_hex(LSign) >= babyJub.p)
+        console.log("R è più grande di p >:(((");
+
 
     // bytes_from_int((k + e * d) % n)
 
-    const RSign = bigint_to_hex(( k + e * d) % order);
-    const signature = LSign.concat(RSign);
+    const RSign = array_bytes_to_hex(bytes_from_int(( k + e * d) % order));
+    const signature = array_bytes_to_hex(LSign) + RSign ;
 
+    console.log(array_bytes_to_hex(LSign));
+
+    const hashInitMsg = crypto
+         .createHash("sha256")
+         .update(msg)
+         .digest("hex");
 
     console.log("> d: ", d);
     console.log("> k: ", k);
     console.log("> e: ", e);
-    console.log("> msg: ", msg);
-    console.log("> LSign: ", LSign);
-    console.log("> RSign: ", RSign);
+    console.log("> msg: ", msg, "[/l: ", count_bytes(hashInitMsg), "]");
+    console.log("> LSign: ", LSign, "[/l: ", count_bytes(LSign), "]");
+    console.log("> RSign: ", RSign, "[/l: ", count_bytes(RSign), "]");
+    console.log("> PubKey: ", array_bytes_to_hex(pP), "[/l: ", count_bytes(pP), "]" );
+    console.log("> Signature: ", signature, "[/l: ", count_bytes(signature), "]");
+    console.log("---------------------------------------------------------------------")
+    //console.log(pP);
+    if (big_int_from_hex(LSign) >= babyJub.p)
+        console.log("R è più grande di p >:(((");
 
-    console.log("> Signature: ", signature);
+    verify_signature(hex_to_array_bytes(hashInitMsg), pP, hex_to_array_bytes(signature));
+
 };
 
-const verify_signature = () => {
+const verify_signature = (msg, packetPubkey, sig) => {
+
+    if (msg.length !== 32) 
+        throw new Error('The message must be a 32-byte array.');
+   
+    if (packetPubkey.length !== 32) 
+        throw new Error('The public key must be a 32-byte array.');
+     
+    if (sig.length !== 64) 
+        throw new Error('The signature must be a 64-byte array.');
+
+    //get public key coords
+    const pubKey = babyJub.unpackPoint(packetPubkey);
+
+    console.log(sig);
+
+    //console.log(pubKey); 
+
+    R =sig.slice(0, 32);
+    S = sig.slice(32,64);
+
+
+    console.log(">R: ", R);
+    console.log(">R: ", byte_array_to_int(R));
+
+    console.log(">p: ", babyJub.p);
+
+    console.log(">S: ", S);
+
+    if (byte_array_to_int(R) >= babyJub.p)
+        console.log("R è più grande di p ,_,");
+    if (S >= babyJub.order)
+        console.log("S è più grande dell'ordine ,_,")
+
+/*
+    if (P is None) or (r >= p) or (s >= n):
+        return False
+    e = int_from_bytes(tagged_hash("BIP0340/challenge", get_bytes_R_from_sig(sig) + pubkey + msg)) % n
+    R = point_add(point_mul(G, s), point_mul(P, n - e))
+    if (R is None) or (not has_even_y(R)):
+        # print("Please, recompute the sign. R is None or has even y")
+        return False
+    if x(R) != r:
+        # print("There's something wrong")
+        return False
+    return True
+    */
 
 }
 
@@ -204,9 +302,11 @@ const geneterate_keys = () => {
 
     const InitPrvKeyHex = array_bytes_to_hex(InitPrvKeyBytes);
 
-    const InitPrvKeyInt = BigInt(int_from_hex(InitPrvKeyHex)) % order;
+    const InitPrvKeyInt = BigInt(big_int_from_hex(InitPrvKeyHex)) % order;
 
     const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
+
+    console.log(pubKey); 
 
     let prvKey;
 
@@ -220,11 +320,10 @@ const geneterate_keys = () => {
     const pPubKey = babyJub.packPoint(pubKey);
     
     //console.log("unpacked key pub in generation keys: ", pubKey);
-    //console.log("packed key pub in generation keys: ", pPubKey);
-
+    console.log("packed key pub in generation keys: ", array_bytes_to_hex(pPubKey));
 
     const pubKeyHex = array_bytes_to_hex(pPubKey);
-    const prvKeyHex = bigint_to_hex(prvKey);
+    const prvKeyHex = big_int_to_hex(prvKey);
 
 
     let pair = {
