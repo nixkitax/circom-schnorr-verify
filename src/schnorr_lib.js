@@ -8,13 +8,13 @@ const Scalar = require("ffjavascript").Scalar;
 let babyJub; // Dichiarazione globale della variabile babyJub
 let order;
 
-const ArrayBytesToHex = (bytes) => {
+const array_bytes_to_hex = (bytes) => {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
         ""
     );
 };
 
-const hexToArrayBytes = (hexString) => {
+const hex_to_array_bytes = (hexString) => {
     if (hexString.length % 2 !== 0) {
         throw new Error("has to be even the string ");
     }
@@ -30,7 +30,7 @@ const hexToArrayBytes = (hexString) => {
     return byteArray;
 };
 
-const byteArrayToInt = (byteArray) => {
+const byte_array_to_int = (byteArray) => {
     let bigIntValue = 0n;
     for (let i = 0; i < byteArray.length; i++) {
         bigIntValue +=
@@ -39,15 +39,15 @@ const byteArrayToInt = (byteArray) => {
     return bigIntValue;
 };
 
-const x = (P) => byteArrayToInt(P[0]);
+const x = (P) => byte_array_to_int(P[0]);
 
-const y = (P) => byteArrayToInt(P[1]);
+const y = (P) => byte_array_to_int(P[1]);
 
-const hasEvenY = (P) => y(P) % 2n == 0n;
+const has_even_y = (P) => y(P) % 2n == 0n;
 
 const int_from_hex = (str) => parseInt(str, 16);
 
-const bigIntToHex = (bigIntValue) => {
+const bigint_to_hex = (bigIntValue) => {
     if (typeof bigIntValue !== 'bigint') {
         throw new Error('Input deve essere un valore BigInt');
     }
@@ -59,7 +59,7 @@ const bigIntToHex = (bigIntValue) => {
     return bigIntValue.toString(16);
 } 
 
-const hexToBigInt = (hexValue) => {
+const hex_to_big_int = (hexValue) => {
   
     if (typeof hexValue !== 'string') {
         throw new Error('Input deve essere una stringa');
@@ -79,7 +79,7 @@ const hexToBigInt = (hexValue) => {
 }
 
 
-const returnPrivKey = async (index) => {
+const return_private_key = async (index) => {
     try {
         const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
         const jsonData = JSON.parse(data);
@@ -98,21 +98,21 @@ const make_json = (object) => {
     console.log("> Key pairs generated: 1 in '../json/users.json'");
 };
 
-const signSchnorr = (msg, privateKey) => {
+const sign_sgnorr = (msg, privateKey) => {
 
-    d0 = hexToBigInt(privateKey);
+    d0 = hex_to_big_int(privateKey);
 
-    //console.log("d0 signSchnorr", d0);
+    //console.log("d0 sign_sgnorr", d0);
 
     if (d0 > (order - 1n))  throw new Error("prvKey has to be minor than order-1 ");
 
     let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
 
-    //console.log("unpacked in SignSchnorr: ", P);
+    //console.log("unpacked in sign_sgnorr: ", P);
 
     let d; //private key
 
-    if (hasEvenY(P)) 
+    if (has_even_y(P)) 
         d = d0
     else 
         d = order - d0;
@@ -129,7 +129,7 @@ const signSchnorr = (msg, privateKey) => {
         .update(hashMsg + nonceValue + msg)
         .digest("hex");
 
-    const k0 = hexToBigInt(combinedHash) % order;
+    const k0 = hex_to_big_int(combinedHash) % order;
 
     //console.log("> k0: " + k0);
 
@@ -146,7 +146,7 @@ const signSchnorr = (msg, privateKey) => {
 
     let k;
 
-    if (hasEvenY(r)) {
+    if (has_even_y(r)) {
         k = k0;
     } else {
         k = order - k0;
@@ -157,17 +157,17 @@ const signSchnorr = (msg, privateKey) => {
     //e = int_from_bytes(tagged_hash("BIP0340/challenge", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
 
 
-    const e = hexToBigInt(crypto
+    const e = hex_to_big_int(crypto
          .createHash("sha256")
          .update(r[0] + P[0] + msg)
          .digest("hex")) % order;
 
     
-    const LSign = ArrayBytesToHex(r[0]);
+    const LSign = array_bytes_to_hex(r[0]);
 
     // bytes_from_int((k + e * d) % n)
 
-    const RSign = bigIntToHex(( k + e * d) % order);
+    const RSign = bigint_to_hex(( k + e * d) % order);
     const signature = LSign.concat(RSign);
 
 
@@ -180,6 +180,10 @@ const signSchnorr = (msg, privateKey) => {
 
     console.log("> Signature: ", signature);
 };
+
+const verify_signature = () => {
+
+}
 
 /*
 const initializeBabyJub = async () => {
@@ -198,7 +202,7 @@ const geneterate_keys = () => {
 
     const InitPrvKeyBytes = crypto.randomBytes(32);
 
-    const InitPrvKeyHex = ArrayBytesToHex(InitPrvKeyBytes);
+    const InitPrvKeyHex = array_bytes_to_hex(InitPrvKeyBytes);
 
     const InitPrvKeyInt = BigInt(int_from_hex(InitPrvKeyHex)) % order;
 
@@ -206,7 +210,7 @@ const geneterate_keys = () => {
 
     let prvKey;
 
-    if (hasEvenY(pubKey)) 
+    if (has_even_y(pubKey)) 
         prvKey = InitPrvKeyInt;
     else 
         prvKey = order - InitPrvKeyInt;
@@ -219,8 +223,8 @@ const geneterate_keys = () => {
     //console.log("packed key pub in generation keys: ", pPubKey);
 
 
-    const pubKeyHex = ArrayBytesToHex(pPubKey);
-    const prvKeyHex = bigIntToHex(prvKey);
+    const pubKeyHex = array_bytes_to_hex(pPubKey);
+    const prvKeyHex = bigint_to_hex(prvKey);
 
 
     let pair = {
@@ -249,11 +253,11 @@ const geneterate_keys = () => {
 
         geneterate_keys();
 
-        const privateKey = await returnPrivKey(0); // Chiama la funzione in modo asincrono
+        const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
         
         console.log('Private Key:', privateKey);
     
-        signSchnorr(msg, privateKey);
+        sign_sgnorr(msg, privateKey);
 
     } catch (error) {
         console.error("Si è verificato un errore:", error);
