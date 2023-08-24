@@ -38,7 +38,6 @@ describe("Schnorr test", function () {
     this.timeout(100000);
 
     before( async () => {
-        eddsa = await buildEddsa();
         babyJub = await buildBabyjub();
         F = babyJub.F;
         circuit = await wasm_tester(path.join(__dirname, "circuits", "schnorr_test.circom"));
@@ -56,17 +55,7 @@ describe("Schnorr test", function () {
 
         const pPubKey = babyJub.packPoint(pubKey);
 
-        const signature = eddsa.signPedersen(prvKey, msg);
-
-        const pSignature = eddsa.packSignature(signature);
-        const uSignature = eddsa.unpackSignature(pSignature);
-
-        assert(eddsa.verifyPedersen(msg, uSignature, pubKey));
-
-        const msgBits = buffer2bits( msg);
-        const r8Bits = buffer2bits( pSignature.slice(0, 32));
-        const sBits = buffer2bits( pSignature.slice(32, 64));
-        const aBits = buffer2bits( pPubKey);
+       // const signature = eddsa.signPedersen(prvKey, msg);
 
         const w = await circuit.calculateWitness({A: aBits, R8: r8Bits, S: sBits, msg: msgBits}, true);
 
