@@ -5,8 +5,6 @@ const crypto = require("crypto");
 const buildBabyjub = require("circomlibjs").buildBabyjub;
 const Scalar = require("ffjavascript").Scalar;
 
-let babyJub; // Dichiarazione globale della variabile babyJub
-let order;
 
 const array_bytes_to_hex = (bytes) => {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
@@ -30,6 +28,12 @@ const hex_to_array_bytes = (hexString) => {
     return byteArray;
 };
 
+
+
+const x = (P) => byte_array_to_int(P[0]);
+
+const y = (P) => byte_array_to_int(P[1]);
+
 const byte_array_to_int = (byteArray) => {
     let bigIntValue = 0n;
     for (let i = 0; i < byteArray.length; i++) {
@@ -39,15 +43,11 @@ const byte_array_to_int = (byteArray) => {
     return bigIntValue;
 };
 
-const x = (P) => byte_array_to_int(P[0]);
-
-const y = (P) => byte_array_to_int(P[1]);
-
 const has_even_y = (P) => y(P) % 2n == 0n;
 
-const big_int_from_hex = (str) => BigInt(parseInt(str, 16));
+const big_int_from_hex = (str) => BigInt('0x' + str);
 
-const big_int_to_hex = (bigIntValue) => {
+const hex_from_big_int = (bigIntValue) => {
     if (typeof bigIntValue !== 'bigint') {
         throw new Error('Input deve essere un valore BigInt');
     }
@@ -130,25 +130,24 @@ const make_json = (object) => {
     console.log("> Key pairs generated: 1 in '../json/users.json'");
 };
 
-const sign_sgnorr = (msg, privateKey) => {
+const sign_shnorr = (msg, privateKey) => {
 
     d0 = hex_to_big_int(privateKey);
 
-    //console.log("d0 sign_sgnorr", d0);
+    //console.log("privateKey in schnorr", d0);
 
-    if (d0 > (order - 1n))  throw new Error("prvKey has to be minor than order-1 ");
+    if (d0 > babyJub.order - 1n)  throw new Error("prvKey has to be minor than order-1 ");
 
     let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
 
-    const pP = babyJub.packPoint(P);
-    console.log("unpacked in sign_sgnorr: ", pP);
+    //console.log("unpacked in sign_sgnorr: ", P);
 
     let d; //private key
 
     if (has_even_y(P)) 
         d = d0
     else 
-        d = order - d0;
+        d = babyJub.order - d0;
 
     //k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
 
@@ -162,49 +161,71 @@ const sign_sgnorr = (msg, privateKey) => {
         .update(hashMsg + nonceValue + msg)
         .digest("hex");
 
-    const k0 = hex_to_big_int(combinedHash) % order;
-
-    //console.log("> k0: " + k0);
-
-    /*
-    console.log("Nonce:", nonceValueInt.toString());
-    console.log("Hash del messaggio:", hashMsg);
-    console.log("Hash combinato:", combinedHash);
-    */
-
+    const k0 = hex_to_big_int(combinedHash) % babyJub.order;
+/*
+    if (k0 < babyJub.order)
+        console.log("k0 < babyJub.order");
+    else 
+        console.log("k0 > babyJub.order");
+*/
     const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
+/*
+    if (babyJub.inSubgroup(r) && babyJub.inCurve(r))
+        console.log("R is good");
 
-
-    //k = n - k0 if not has_even_y(R) else k0
-    //console.log(r);
-
-    let k;
-
-    if (has_even_y(r)) {
-        k = k0;
-    } else {
-        k = order - k0;
-    }
-
-    //console.log("r subgroup?", babyJub.inSubgroup(r));
-
-    //e = int_from_bytes(tagged_hash("BIP0340/challenge", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
-
-
+    else 
+        console.log("R not good");
+*/
     const e = hex_to_big_int(crypto
          .createHash("sha256")
-         .update(r[0] + P[0] + msg)
-         .digest("hex")) % order;
+         .update(x(r) + x(P) + msg)
+         .digest("hex"));
 
+    const s = (k0 + d * e) % babyJub.order;
+
+    console.log("");
+    console.log("> d:    ", d);
+    console.log("> k     ", k0);
+    console.log("> e:    ", e);
+    console.log("> x(r): ", x(r));
+    console.log("> s:    ", s);
+    console.log("> n:    ", babyJub.order);
+    console.log("");
+
+
+    const LSign = hex_from_big_int(x(r)).padStart(64, "0");
+    const RSign = hex_from_big_int(s).padStart(64, "0");
+
+    const signature = LSign + RSign;
     
+    console.log("> [LSign][RSign] (bigInt): ", "\n[",big_int_from_hex(LSign),"]\n[",big_int_from_hex(RSign),"]");
+    console.log("");
+    console.log("> [LSign][RSign] (HEX): ", "\n[",LSign,"]\n[",RSign,"]");
+    console.log("");
+    console.log("> Signature: ", signature);
 
-    const LSign = bytes_from_int(x(r));
+    verify_signature(P, msg, signature);
 
-    if (big_int_from_hex(LSign) >= babyJub.p)
+
+    /*
+    console.log("x(r)", x(r));
+
+    const LSign = x(r) % babyJub.order;
+
+    if (LSign > babyJub.order)
         console.log("R è più grande di p >:(((");
+    else    
+        console.log("LSign OK!")
 
+    console.log(LSign);
+    
+    console.log(hex_from_big_int(LSign));
+
+    console.log(big_int_from_hex(LSign));
 
     // bytes_from_int((k + e * d) % n)
+
+    //console.log("LSign: ", byte_array_to_int(LSign));
 
     const RSign = array_bytes_to_hex(bytes_from_int(( k + e * d) % order));
     const signature = array_bytes_to_hex(LSign) + RSign ;
@@ -220,67 +241,21 @@ const sign_sgnorr = (msg, privateKey) => {
     console.log("> k: ", k);
     console.log("> e: ", e);
     console.log("> msg: ", msg, "[/l: ", count_bytes(hashInitMsg), "]");
-    console.log("> LSign: ", LSign, "[/l: ", count_bytes(LSign), "]");
+    //console.log("> LSign: ", LSign, "[/l: ", count_bytes(LSign), "]");
     console.log("> RSign: ", RSign, "[/l: ", count_bytes(RSign), "]");
     console.log("> PubKey: ", array_bytes_to_hex(pP), "[/l: ", count_bytes(pP), "]" );
     console.log("> Signature: ", signature, "[/l: ", count_bytes(signature), "]");
     console.log("---------------------------------------------------------------------")
-    //console.log(pP);
-    if (big_int_from_hex(LSign) >= babyJub.p)
-        console.log("R è più grande di p >:(((");
 
-    verify_signature(hex_to_array_bytes(hashInitMsg), pP, hex_to_array_bytes(signature));
-
+*/
 };
 
 const verify_signature = (msg, packetPubkey, sig) => {
 
-    if (msg.length !== 32) 
-        throw new Error('The message must be a 32-byte array.');
-   
-    if (packetPubkey.length !== 32) 
-        throw new Error('The public key must be a 32-byte array.');
-     
-    if (sig.length !== 64) 
+    if (count_bytes(sig) !== 64) 
         throw new Error('The signature must be a 64-byte array.');
 
-    //get public key coords
-    const pubKey = babyJub.unpackPoint(packetPubkey);
-
-    console.log(sig);
-
-    //console.log(pubKey); 
-
-    R =sig.slice(0, 32);
-    S = sig.slice(32,64);
-
-
-    console.log(">R: ", R);
-    console.log(">R: ", byte_array_to_int(R));
-
-    console.log(">p: ", babyJub.p);
-
-    console.log(">S: ", S);
-
-    if (byte_array_to_int(R) >= babyJub.p)
-        console.log("R è più grande di p ,_,");
-    if (S >= babyJub.order)
-        console.log("S è più grande dell'ordine ,_,")
-
-/*
-    if (P is None) or (r >= p) or (s >= n):
-        return False
-    e = int_from_bytes(tagged_hash("BIP0340/challenge", get_bytes_R_from_sig(sig) + pubkey + msg)) % n
-    R = point_add(point_mul(G, s), point_mul(P, n - e))
-    if (R is None) or (not has_even_y(R)):
-        # print("Please, recompute the sign. R is None or has even y")
-        return False
-    if x(R) != r:
-        # print("There's something wrong")
-        return False
-    return True
-    */
-
+    //const R,S;
 }
 
 /*
@@ -300,30 +275,28 @@ const geneterate_keys = () => {
 
     const InitPrvKeyBytes = crypto.randomBytes(32);
 
-    const InitPrvKeyHex = array_bytes_to_hex(InitPrvKeyBytes);
-
-    const InitPrvKeyInt = BigInt(big_int_from_hex(InitPrvKeyHex)) % order;
+    const InitPrvKeyInt = byte_array_to_int(InitPrvKeyBytes) % babyJub.order;
 
     const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
 
-    console.log(pubKey); 
 
     let prvKey;
 
     if (has_even_y(pubKey)) 
         prvKey = InitPrvKeyInt;
     else 
-        prvKey = order - InitPrvKeyInt;
+        prvKey = babyJub.order - InitPrvKeyInt;
 
     //console.log("prvKey generation:", prvKey);
 
     const pPubKey = babyJub.packPoint(pubKey);
-    
-    //console.log("unpacked key pub in generation keys: ", pubKey);
-    console.log("packed key pub in generation keys: ", array_bytes_to_hex(pPubKey));
-
+   /* 
+    console.log("privateKey:",prvKey, prvKey < babyJub.order);
+    console.log("First generations pubKey:", pubKey); 
+    console.log("packet key pub in generation keys: ", pPubKey);
+    */
     const pubKeyHex = array_bytes_to_hex(pPubKey);
-    const prvKeyHex = big_int_to_hex(prvKey);
+    const prvKeyHex = hex_from_big_int(prvKey);
 
 
     let pair = {
@@ -354,9 +327,9 @@ const geneterate_keys = () => {
 
         const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
         
-        console.log('Private Key:', privateKey);
+        //console.log('Private Key:', privateKey);
     
-        sign_sgnorr(msg, privateKey);
+        sign_shnorr(msg, privateKey);
 
     } catch (error) {
         console.error("Si è verificato un errore:", error);
