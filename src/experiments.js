@@ -8,6 +8,7 @@ const Scalar = require("ffjavascript").Scalar;
 
 
 
+
 const x = (P) => byte_array_to_int(P[0]);
 
 const y = (P) => byte_array_to_int(P[1]);
@@ -119,6 +120,7 @@ const return_private_key = async (index) => {
 };
 
 
+
 const return_public_key = async (index) => {
     try {
         const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
@@ -131,6 +133,23 @@ const return_public_key = async (index) => {
         throw err; // Rilancia l'errore per gestirlo al livello superiore
     }
 };
+
+const multiplyBigIntWithMatrices = (bigint, matrix) => {
+    if (typeof bigint !== 'string' || !bigint.match(/^\d+$/)) {
+        throw new Error("Input bigint must be a non-negative integer string.");
+    }
+
+    if (!Array.isArray(matrix) || !matrix.every(row => Array.isArray(row))) {
+        throw new Error("Input matrix must be a 2D array.");
+    }
+
+    const resultMatrix = matrix.map(row =>
+        row.map(element => (BigInt(element) * BigInt(bigint)).toString())
+    );
+
+    return resultMatrix;
+};
+
 
 const stringToBytes32 = (inputString) => {
   // Converti la stringa in un array di byte usando TextEncoder
@@ -245,17 +264,14 @@ const verify_signature = (P, msg, signature) => {
 const geneterate_keys = () => {
 
     const InitPrvKeyBytes = crypto.randomBytes(32);
-    const InitPrvKeyInt = byte_array_to_int(InitPrvKeyBytes) % babyJub.order;
-    const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
 
-    let prvKey;
+    console.log(byte_array_to_int(InitPrvKeyBytes));
 
-    prvKey = has_even_y(pubKey) ? InitPrvKeyInt :  babyJub.order - InitPrvKeyInt;
 
-    const pPubKey = babyJub.packPoint(pubKey);
-    const pubKeyHex = array_bytes_to_hex(pPubKey);
-    const prvKeyHex = hex_from_big_int(prvKey);
+    const InitPrvKeyInt = multiplyBigIntWithMatrices( byte_array_to_int(InitPrvKeyBytes), babyJub.Base8) ;
 
+    console.log(InitPrvKeyInt);
+     
     let pair = {
         publicKey: pubKeyHex,
         privateKey: prvKeyHex,
@@ -280,11 +296,11 @@ const geneterate_keys = () => {
 
         const msg = "hello";
 
-        //geneterate_keys();
+        geneterate_keys();
 
-        const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
+        //const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
             
-        sign_shnorr(stringToBytes32(msg), privateKey);
+        //sign_shnorr(stringToBytes32(msg), privateKey);
 
         
     } catch (error) {
