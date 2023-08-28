@@ -1,28 +1,35 @@
 const fs = require("fs");
 const fsp = require('fs/promises'); // Importa il modulo fs.promises
-const assert = require('assert');
+
 const crypto = require("crypto");
-const { emitWarning } = require("process");
 const buildBabyjub = require("circomlibjs").buildBabyjub;
 const Scalar = require("ffjavascript").Scalar;
 
+let count = 0;
+
+const array_bytes_to_hex = (bytes) => {
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+        ""
+    );
+};
+
+const hex_to_array_bytes = (hexString) => {
+    const byteLength = hexString.length / 2;
+    const byteArray = new Uint8Array(byteLength);
+
+    for (let i = 0; i < byteLength; i++) {
+        const byteHex = hexString.substr(i * 2, 2);
+        byteArray[i] = parseInt(byteHex, 16);
+    }
+
+    return byteArray;
+};
 
 
 
 const x = (P) => byte_array_to_int(P[0]);
 
 const y = (P) => byte_array_to_int(P[1]);
-
-const tagged_hash = (tag, msg) => {
-    const tag_hash = crypto
-        .createHash("sha256")
-        .update(tag)
-        .digest();
-    return crypto
-        .createHash("sha256")
-        .update(tag_hash + tag_hash + msg )
-        .digest();
-}
 
 const byte_array_to_int = (byteArray) => {
     let bigIntValue = 0n;
@@ -31,24 +38,6 @@ const byte_array_to_int = (byteArray) => {
             BigInt(byteArray[i]) * 256n ** BigInt(byteArray.length - 1 - i);
     }
     return bigIntValue;
-};
-
-const int_to_byte_array = (bigIntValue) => {
-    const byteArray = new Uint8Array(32);
-    const hexString = bigIntValue.toString(16).padStart(64, '0');
-    
-    for (let i = 0; i < 32; i++) {
-        byteArray[i] = parseInt(hexString.substr(i * 2, 2), 16);
-    }
-    
-    return byteArray;
-};
-
-
-const array_bytes_to_hex = (bytes) => {
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-        ""
-    );
 };
 
 const has_even_y = (P) => y(P) % 2n == 0n;
@@ -66,6 +55,19 @@ const hex_from_big_int = (bigIntValue) => {
 
     return bigIntValue.toString(16);
 } 
+
+const bytes_from_int = (bigIntValue) => {
+    const byteLength = 32; // Lunghezza desiderata in byte
+    const byteArray = new Uint8Array(byteLength);
+    
+    for (let i = 0; i < byteLength; i++) {
+        byteArray[byteLength - 1 - i] = Number(bigIntValue & BigInt(0xff));
+        bigIntValue >>= BigInt(8);
+    }
+    
+    return byteArray;
+}
+
 
 const count_bytes = (object) => {
     const byteArray = Buffer.from(object, 'hex');
@@ -91,26 +93,12 @@ const hex_to_big_int = (hexValue) => {
     return BigInt('0x' + hexValue);
 }
 
-const xor_byte_arrays = (array1, array2) => {
-  if (array1.length !== array2.length) {
-    throw new Error('Gli array devono avere la stessa lunghezza');
-  }
-
-  const result = new Uint8Array(array1.length);
-
-  for (let i = 0; i < array1.length; i++) {
-    result[i] = array1[i] ^ array2[i];
-  }
-
-  return result;
-}
-
 
 const return_private_key = async (index) => {
     try {
         const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
         const jsonData = JSON.parse(data);
-        const privateKey = jsonData.users[0].privateKey;
+        const privateKey = jsonData.users[index].privateKey;
 
         return privateKey; // Restituisce la chiave privata
     } catch (err) {
@@ -120,158 +108,204 @@ const return_private_key = async (index) => {
 };
 
 
-
 const return_public_key = async (index) => {
     try {
-        const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
+        const data = await fsp.readFile('../json/input.json', 'utf8'); // Utilizza await per aspettare la lettura del file
         const jsonData = JSON.parse(data);
-        const publicKey = jsonData.users[0].publicKey;
 
-        return publicKey; // Restituisce la chiave privata
+        return jsonData.pubKeys[index];
+
     } catch (err) {
         console.error('Errore:', err);
         throw err; // Rilancia l'errore per gestirlo al livello superiore
     }
 };
 
-const multiplyBigIntWithMatrices = (bigint, matrix) => {
-    if (typeof bigint !== 'string' || !bigint.match(/^\d+$/)) {
-        throw new Error("Input bigint must be a non-negative integer string.");
+const return_signature = async () => {
+    try {
+        const data = await fsp.readFile('../json/input.json', 'utf8'); // Utilizza await per aspettare la lettura del file
+        const jsonData = JSON.parse(data);
+        const LSign = jsonData.LSign;
+        const RSign = jsonData.RSign;
+        return LSign + RSign;; // Restituisce la chiave privata
+    } catch (err) {
+        console.error('Errore:', err);
+        throw err; // Rilancia l'errore per gestirlo al livello superiore
     }
-
-    if (!Array.isArray(matrix) || !matrix.every(row => Array.isArray(row))) {
-        throw new Error("Input matrix must be a 2D array.");
-    }
-
-    const resultMatrix = matrix.map(row =>
-        row.map(element => (BigInt(element) * BigInt(bigint)).toString())
-    );
-
-    return resultMatrix;
 };
 
-
-const stringToBytes32 = (inputString) => {
-  // Converti la stringa in un array di byte usando TextEncoder
-  const textEncoder = new TextEncoder();
-  const stringBytes = textEncoder.encode(inputString);
-
-  // Padding con zeri se la lunghezza è inferiore a 32 byte
-  const paddedBytes = new Uint8Array(32).fill(0);
-  paddedBytes.set(stringBytes, 0);
-
-  // Se la lunghezza è superiore a 32 byte, taglia l'array
-  if (stringBytes.length > 32) {
-    return paddedBytes.slice(0, 32);
-  }
-
-  return paddedBytes;
-}
-
-const make_json = (object) => {
+const make_json = (object, path) => {
     const jsonString = JSON.stringify(object, null, 2);
-    fs.writeFileSync("../json/users.json", jsonString);
-    console.log("> Key pairs generated: 1 in '../json/users.json'");
+    fs.writeFileSync(path, jsonString);
 };
 
 const sign_shnorr = (msg, privateKey) => {
-    if (msg.length != 32) throw new Error("The message must be a 32-byte array");
 
     d0 = hex_to_big_int(privateKey);
-    if (d0 > babyJub.order - 1n || d0 <= 1n )  throw new Error("prvKey has to be minor than order-1 ");
-    const P = babyJub.mulPointEscalar(babyJub.Base8, d0);
-    d = has_even_y(P) ?  d0 : babyJub.order - d0;
-   
-   //using nonce_rfc6979(m,x)
-    
-   console.log();
 
-    const t = xor_byte_arrays(int_to_byte_array(d), tagged_hash(("BIP0340/aux", crypto.randomBytes(32))))
-    
-    const k0 = byte_array_to_int(tagged_hash("BIP0340/nonce", t + int_to_byte_array(x(P)) + msg )) % babyJub.p;
-    
-    if (k0 == 0)  throw new Error("This can happen if combinedHash == order [negligible probability] ");
+    //console.log("privateKey in schnorr", d0);
+
+    if (d0 > babyJub.order - 1n)  throw new Error("prvKey has to be minor than order-1 ");
+
+    let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
+
+    //console.log("unpacked in sign_sgnorr: ", P);
+
+    let d; //private key
+
+    if (has_even_y(P)) 
+        d = d0
+    else 
+        d = babyJub.order - d0;
+
+    //console.log("d in sign:",d);
+    //k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
+
+    const nonceValue = crypto.randomBytes(32);
+    const hashMsg = crypto
+        .createHash("sha256")
+        .update("HOPE2SEEUAGA")
+        .digest("hex");
+    const combinedHash = crypto
+        .createHash("sha256")
+        .update(hashMsg + nonceValue + msg)
+        .digest("hex");
+
+    const k0 = (hex_to_big_int(combinedHash))% babyJub.order;
+
+    if (k0 < babyJub.p)
+        console.log("k0 < babyJub.p");
+    else 
+        console.log("k0 > babyJub.p");
 
     const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
 
-    const k = !has_even_y(r) ? babyJub.order - k0 : k0;
-   
-    const e = Scalar.mod(hex_to_big_int(crypto
+    if (babyJub.inSubgroup(r) && babyJub.inCurve(r))
+        console.log("R is good");
+
+    else 
+        console.log("R not good");
+
+    const concatHash = hex_from_big_int(x(r)) + hex_from_big_int(x(P)) + msg;
+
+    console.log("elementi hash", hex_from_big_int(x(r)) + hex_from_big_int(x(P)) + msg);
+
+
+    //console.log("x(r)",x(r));
+
+    console.log("hash concatenato:", concatHash);
+
+    const e = hex_to_big_int(crypto
          .createHash("sha256")
-         .update(hex_from_big_int(x(r)) + hex_from_big_int(x(P)) + msg)
-         .digest("hex")), babyJub.order);
-  
+         .update(concatHash)
+         .digest("hex")) % babyJub.order;
+ /*
     console.log("");
     console.log("> d:    ", d);
-    console.log("> k     ", k);
+    console.log("> k     ", k0);
     console.log("> e:    ", e);
     console.log("> x(r): ", x(r));
     console.log("> n:    ", babyJub.order);
     console.log("");
-
-    const LSign = hex_from_big_int(x(r) % babyJub.order);
-    const RSign = hex_from_big_int(Scalar.mod((k + d * e), babyJub.order));
+*/
+    const LSign = hex_from_big_int(x(r));
+    const RSign = hex_from_big_int((k0 + d * e) % babyJub.order);
 
     const signature = LSign.concat(RSign);
     
-    console.log("> [LSign][RSign] (bigInt): ", "\n[",big_int_from_hex(LSign),"]\n[",big_int_from_hex(RSign),"]");
+    console.log("> [Sign_schnorr][LSign][RSign] (bigInt): ", "\n[",big_int_from_hex(LSign),"]\n[",big_int_from_hex(RSign),"]");
     console.log("");
-    console.log("> [LSign][RSign] (HEX): ", "\n[",LSign,"]\n[",RSign,"]");
+    console.log("> [Sign_schnorr]([LSign][RSign]) (HEX): ", "\n[",LSign,"]\n[",RSign,"]");
     console.log("");
-    console.log("> Signature: ", signature);
 
-    verify_signature(P, msg, signature);
+    console.log("P",P);
+    console.log("packedPoint:", babyJub.packPoint(P));
+    const hexP = array_bytes_to_hex(babyJub.packPoint(P));
+    console.log(hexP);
+    //console.log(babyJub.unpackPoint(hex_to_array_bytes(hexP)));
+    
+    let object = {
+        "msg" : msg,
+        "LSign" : LSign,
+        "RSign" : RSign,
+        "pubKeys" : [
+            hexP
+        ]
+
+    };
+    make_json(object, "../json/input.json");
+    console.log("> Signature generated!");
+    
 };
 
-const verify_signature = (P, msg, signature) => {
+const verify_signature = (hexP, msg, signature) => {
 
+    this.hexP = hexP;
+    const bytesP = hex_to_array_bytes(hexP);
+    const P = babyJub.unpackPoint(bytesP);
+
+    
     const LSign = signature.slice(0, 64);
     const RSign = signature.slice(64);
 
-    const R = big_int_from_hex(LSign); 
-    const s = big_int_from_hex(RSign) 
+    const R = big_int_from_hex(LSign); // Convert HEX to BigInt
+    const s = big_int_from_hex(RSign) // Convert HEX to BigInt
 
-    console.log("> R [BigInt/LSign]: ",R , "[ Is it okay? (?R<p): ", R < babyJub.p, "]");
-    console.log("> S [BigInt/LSign]: ",s , "[ Is it okay? (?s<order): ", s < babyJub.order, "]");
+    console.log("> [Verify_signature] s [BigInt/RSign]:   ",s);
 
     const concatHash = LSign + hex_from_big_int(x(P)) + msg;
 
-    const e = Scalar.mod(hex_to_big_int(crypto
+    const e = hex_to_big_int(crypto
          .createHash("sha256")
          .update(concatHash)
-         .digest("hex")), babyJub.order);
-
-         console.log("> e: ", e);
+         .digest("hex")) % babyJub.order;
+ 
+    console.log("> [Verify_signature] e :                 ", e);
 
     const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
-    const Pe = babyJub.mulPointEscalar(P, order - e);
+    const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
 
     //console.log("> gs: ", gs);
     //console.log("> Pe: ", Pe);
 
     const newR = babyJub.addPoint(gs, Pe);
 
-    console.log("Is newR totally okay?:", has_even_y(newR));
+    //console.log("> new Point: ", newR);
+    console.log("");
     
-    console.log("> R:         ", R);
-    console.log("> xnewPoint: ", x(newR));
+    console.log("> [Verify_signature] R:                  ", R);
+    console.log("> [Verify_signature] xnewPoint:          ", x(newR));
 
-    if (Scalar.eq(R, x(newR)))
-       console.log("VERIFICATION PASSED :)") 
-
+    if(Scalar.eq(R, x(newR)))
+        console.log("\n\t\t\t\t\t  Verification is OK :)");
+    
 }
 
 const geneterate_keys = () => {
 
     const InitPrvKeyBytes = crypto.randomBytes(32);
+    const InitPrvKeyInt = byte_array_to_int(InitPrvKeyBytes) % babyJub.order;
+    const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
 
-    console.log(byte_array_to_int(InitPrvKeyBytes));
+    let prvKey;
+
+    if (has_even_y(pubKey)) 
+        prvKey = InitPrvKeyInt;
+    else 
+        prvKey = babyJub.order - InitPrvKeyInt;
+
+    //console.log("prvKey generation:", prvKey);
+
+    const pPubKey = babyJub.packPoint(pubKey);
+   /* 
+    console.log("privateKey:",prvKey, prvKey < babyJub.order);
+    console.log("First generations pubKey:", pubKey); 
+    console.log("packet key pub in generation keys: ", pPubKey);
+    */
+    const pubKeyHex = array_bytes_to_hex(pPubKey);
+    const prvKeyHex = hex_from_big_int(prvKey);
 
 
-    const InitPrvKeyInt = multiplyBigIntWithMatrices( byte_array_to_int(InitPrvKeyBytes), babyJub.Base8) ;
-
-    console.log(InitPrvKeyInt);
-     
     let pair = {
         publicKey: pubKeyHex,
         privateKey: prvKeyHex,
@@ -284,7 +318,9 @@ const geneterate_keys = () => {
 
     object.users.push(pair);
 
-    make_json(object);
+    make_json(object, "../json/users.json");
+    console.log("> Key pairs generated: 1 in '../json/users.json'");
+
 };
 
 (async () => {
@@ -296,13 +332,18 @@ const geneterate_keys = () => {
 
         const msg = "hello";
 
-        geneterate_keys();
-
-        //const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
-            
-        //sign_shnorr(stringToBytes32(msg), privateKey);
-
         
+
+        const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
+        //console.log('Private Key:', privateKey);
+        //geneterate_keys();
+        sign_shnorr(msg, privateKey);
+        const pubKey = await return_public_key(0);        
+        const signature = await return_signature();
+
+        console.log("PubKey: ", pubKey, "\nSignature: ", signature,"\nMsg:", msg);
+        verify_signature(pubKey, msg, signature);
+
     } catch (error) {
         console.error("Si è verificato un errore:", error);
     }
