@@ -3,7 +3,6 @@ const path = require("path");
 
 const wasm_tester = require("circom_tester").wasm;
 
-const buildEddsa = require("circomlibjs").buildEddsa; //babyjubjub, poseidon, OK!
 const buildBabyjub = require("circomlibjs").buildBabyjub;
 
 const Scalar = require("ffjavascript").Scalar;
@@ -49,15 +48,10 @@ describe("Schnorr test", function () {
 
 //      const prvKey = crypto.randomBytes(32);
 
-        const prvKey = Buffer.from("0001020304050607080900010203040506070809000102030405060708090001", "hex");
-
-        const pubKey = eddsa.prv2pub(prvKey);
-
-        const pPubKey = babyJub.packPoint(pubKey);
 
        // const signature = eddsa.signPedersen(prvKey, msg);
 
-        const w = await circuit.calculateWitness({A: aBits, R8: r8Bits, S: sBits, msg: msgBits}, true);
+        const w = await circuit.calculateWitness({ /* still to decide*/ }, true);
 
         await circuit.checkConstraints(w);
     });
