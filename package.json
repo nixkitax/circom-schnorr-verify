@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "argparse": "^2.0.1",
     "chai": "^4.3.7",
     "circom_tester": "^0.0.19",
     "circomlib": "^2.0.5",
