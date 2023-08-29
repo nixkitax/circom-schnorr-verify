@@ -53,23 +53,23 @@ node schnorr-lib -v -p "Public Key" -s "Signature" -orm "Original Message"
 ```
 
 # Command-line Options
--g, --generateKeys: Generate cryptographic key pairs.
+` -g, --generateKeys`  : Generate cryptographic key pairs.
 
--n, --number: Number of key pairs to generate (used with -g).
+`-n, --number`: Number of key pairs to generate (used with -g).
 
--c, --createSignature: Create a signature for a message.
+`-c, --createSignature:` Create a signature for a message.
 
--i, --index: Index of the private key to be used for signing (used with -c).
+`-i, --index`: Index of the private key to be used for signing (used with -c).
 
--m, --message: Message to be signed (used with -c).
+`-m, --message`: Message to be signed (used with -c).
 
--v, --verifySign: Verify a signature.
+`-v, --verifySign`: Verify a signature.
 
--p, --pPubKey: Compressed public key for signature verification (used with -v).
+`-p, --pPubKey`: Compressed public key for signature verification (used with -v).
 
--s, --signature: Signature to be verified (used with -v).
+`-s, --signature`: Signature to be verified (used with -v).
 
--orm, --originalMsg: Original message for signature verification (used with -v).
+`-orm, --originalMsg`: Original message for signature verification (used with -v).
 
 ## Examples
 
