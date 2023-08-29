@@ -1,11 +1,49 @@
 const fs = require("fs");
-const fsp = require('fs/promises'); // Importa il modulo fs.promises
-
+const fsp = require('fs/promises');
 const crypto = require("crypto");
 const buildBabyjub = require("circomlibjs").buildBabyjub;
-const Scalar = require("ffjavascript").Scalar;
+const { ArgumentParser } = require('argparse');
+const { version } = require('../package.json');
 
-let count = 0;
+(async () => {
+    try {
+        babyJub = await buildBabyjub();
+
+        const F = babyJub.F;
+        const order = babyJub.order;
+
+        const parser = new ArgumentParser({
+            description: 'Argparse example'
+        });
+
+        parser.add_argument('-g', '--generateKeys', { action: "store_true", help: 'Generate keys' });
+        parser.add_argument('-n', '--number', { type: Number, help: 'Number of keys to generate', required: false ,  default: 1 });
+        parser.add_argument('-c', '--createSignature', { action: "store_true", help: 'creation of a signature', required: false});
+        parser.add_argument('-i', '--index', { type: Number, help: 'index of a privateKey', required: false, default: 0});
+        parser.add_argument('-m', '--message', { type: String, help: 'Message to sign', required: false, default: array_bytes_to_hex(crypto.randomBytes(32)) });
+        parser.add_argument('-v', '--verifySign', { action: "store_true", help: 'message to sign', required: false  });
+        parser.add_argument('-p', '--pPubKey', { type: String, help: 'publicKey to verify a signature', required: false, default: " "  });
+        parser.add_argument('-s', '--signature', { type: String, help: 'signature to verify', required: false, default: " "  });
+        parser.add_argument('-orm', '--originalMsg', { type: String, help: 'original message to verify', required: false, default: " "  });
+
+        const args = parser.parse_args();
+        if (args.generateKeys) generate_keys(args.number);
+        if (args.createSignature){ 
+            const privateKey = await return_private_key(args.index);
+            sign_schnorr(args.message, privateKey, "sign");
+        }
+        if(args.verifySign){
+            if(args.pPubKey == " ") console.error("You have to insert a compressed public key [HEX] to verify a signature, node schnorr.js -h");
+            if(args.signature == " ") console.error("You have to insert a signature [HEX] to verify a signature, node schnorr.js -h");
+            if(args.originalMsg == " ") console.error("You have to insert the original message to verify a signature, node schnorr.js -h");
+            //console.log(args.originalMsg);
+            verify_signature(args.pPubKey, args.originalMsg, args.signature, "verify");
+        }
+
+    } catch (error) {
+        console.error("Si è verificato un errore:", error);
+    }
+})();
 
 const array_bytes_to_hex = (bytes) => {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
@@ -14,22 +52,12 @@ const array_bytes_to_hex = (bytes) => {
 };
 
 const hex_to_array_bytes = (hexString) => {
-    if (hexString.length % 2 !== 0) {
-        throw new Error("has to be even the string ");
+    const bytes = [];
+    for (let i = 0; i < hexString.length; i += 2) {
+        bytes.push(parseInt(hexString.substr(i, 2), 16));
     }
-
-    const byteLength = hexString.length / 2;
-    const byteArray = new Uint8Array(byteLength);
-
-    for (let i = 0; i < byteLength; i++) {
-        const byteHex = hexString.substr(i * 2, 2);
-        byteArray[i] = parseInt(byteHex, 16);
-    }
-
-    return byteArray;
+    return bytes;
 };
-
-
 
 const x = (P) => byte_array_to_int(P[0]);
 
@@ -60,23 +88,30 @@ const hex_from_big_int = (bigIntValue) => {
     return bigIntValue.toString(16);
 } 
 
-const bytes_from_int = (bigIntValue) => {
-    const byteLength = 32; // Lunghezza desiderata in byte
-    const byteArray = new Uint8Array(byteLength);
+const int_to_byte_array = (intValue) => {
+    const byteArray = [];
     
-    for (let i = 0; i < byteLength; i++) {
-        byteArray[byteLength - 1 - i] = Number(bigIntValue & BigInt(0xff));
-        bigIntValue >>= BigInt(8);
+    if (intValue === 0) {
+        byteArray.push(0);
+        return byteArray;
+    }
+    
+    const isNegative = intValue < 0;
+    if (isNegative) {
+        intValue = -intValue;
+    }
+
+    while (intValue > 0) {
+        byteArray.unshift(Number(intValue & 0xffn));
+        intValue >>= 8n;
+    }
+    
+    if (isNegative) {
+        byteArray.unshift(0x80); // Aggiunge un byte per segnalare il numero negativo
     }
     
     return byteArray;
-}
-
-
-const count_bytes = (object) => {
-    const byteArray = Buffer.from(object, 'hex');
-    return byteArray.length;
-}
+};
 
 const hex_to_big_int = (hexValue) => {
   
@@ -125,22 +160,24 @@ const return_public_key = async (index) => {
     }
 };
 
-const make_json = (object, path) => {
+const verify_key_pair = (msg, prvKeyHex) => {
+
+    return sign_schnorr(msg, prvKeyHex, "verKey");
+
+}
+
+const update_users_json = (object, path) => {
     const jsonString = JSON.stringify(object, null, 2);
     fs.writeFileSync(path, jsonString);
 };
 
-const sign_shnorr = (msg, privateKey) => {
+const sign_schnorr = (msg, privateKey, type) => {
 
     d0 = hex_to_big_int(privateKey);
-
-    //console.log("privateKey in schnorr", d0);
 
     if (d0 > babyJub.order - 1n)  throw new Error("prvKey has to be minor than order-1 ");
 
     let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
-
-    //console.log("unpacked in sign_sgnorr: ", P);
 
     let d; //private key
 
@@ -148,9 +185,6 @@ const sign_shnorr = (msg, privateKey) => {
         d = d0
     else 
         d = babyJub.order - d0;
-
-    //console.log("d in sign:",d);
-    //k0 = int_from_bytes(tagged_hash("BIP0340/nonce", t + bytes_from_point(P) + msg)) % n
 
     const nonceValue = crypto.randomBytes(32);
     const hashMsg = crypto
@@ -164,185 +198,120 @@ const sign_shnorr = (msg, privateKey) => {
 
     const k0 = (hex_to_big_int(combinedHash))% babyJub.order;
 
-    if (k0 < babyJub.p)
-        console.log("k0 < babyJub.p");
-    else 
-        console.log("k0 > babyJub.p");
-
     const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
-
-    if (babyJub.inSubgroup(r) && babyJub.inCurve(r))
-        console.log("R is good");
-
-    else 
-        console.log("R not good");
 
     const concatHash = hex_from_big_int(x(r)) + hex_from_big_int(x(P)) + msg;
 
-    console.log("elementi hash", hex_from_big_int(x(r)) + hex_from_big_int(x(P)) + msg);
-
-
-    //console.log("x(r)",x(r));
-
-    console.log("hash concatenato:", concatHash);
-
     const e = hex_to_big_int(crypto
          .createHash("sha256")
          .update(concatHash)
          .digest("hex")) % babyJub.order;
- 
-    console.log("");
-    console.log("> [Sign_Schnorr] d:                       ", d);
-    console.log("> [Sign_Schnorr] k                        ", k0);
-    console.log("> [Sign_Schnorr] e:                       ", e);
-    console.log("> [Sign_Schnorr] x(r):                    ", x(r));
-    console.log("> [Sign_Schnorr] n:                       ", babyJub.order);
-    console.log("");
-
     const LSign = hex_from_big_int(x(r));
     const RSign = hex_from_big_int((k0 + d * e) % babyJub.order);
-
+    const pPubKey = babyJub.packPoint(P);
     const signature = LSign.concat(RSign);
+
+    switch(type){
+        case "verKey": 
+            return verify_signature(pPubKey, msg, signature, "verKey");
+        case "sign": 
+            console.log("");
+            console.log("> [Sign_Schnorr] d:                       ", d);
+            console.log("> [Sign_Schnorr] k                        ", k0);
+            console.log("> [Sign_Schnorr] e:                       ", e);
+            console.log("> [Sign_Schnorr] x(r):                    ", x(r));
+            console.log("> [Sign_Schnorr] n:                       ", babyJub.order);
+            console.log("");
+            console.log("> [Sign_Schnorr][LSign][RSign] (bigInt): ", "\n\n\t   [",big_int_from_hex(LSign),"]\n\t   [",big_int_from_hex(RSign),"]\n");
+            console.log("> [Sign_Schnorr]([LSign][RSign]) (HEX): ", "\n\n\t   [",LSign + RSign,"]\n");
+            console.log("> [Sign_Schnorr] message:      ", msg);
+            console.log("> [Sign_Schnorr] public key:   ", array_bytes_to_hex(pPubKey) )
+            console.log("");
+            //console.log( hex_to_array_bytes(array_bytes_to_hex(pPubKey)))
+            //return verify_signature(pPubKey, msg, signature, "verify");
+            break;
+        case "default":
+            console.error("There is unknown paramaters for schnorr_sign");
+    }
     
-    console.log("> [Sign_Schnorr][LSign][RSign] (bigInt): ", "\n\t\t\t\t\t  [",big_int_from_hex(LSign),"]\n\t\t\t\t\t  [",big_int_from_hex(RSign),"]");
-    console.log("");
-    console.log("> [Sign_Schnorr]([LSign][RSign]) (HEX): ", "\n\t\t\t\t\t  [",LSign,"]\n\t\t\t\t\t  [",RSign,"]");
-    console.log("");
-    
-    verify_signature(P, msg, signature);
 };
 
-const fix_pub_key = (P) => {
-    if(y(P) % 2n == 0n){
-        console.log(babyJub.p - y(P));
-        console.log(bytes_from_int(babyJub.p - y(P)));
-        console.log(byte_array_to_int(bytes_from_int(babyJub.p - y(P))));
+const verify_signature = (pPubKey, msg, signature, type) => {
 
-     }
+    if(type == "verify")
+        pPubKey = hex_to_array_bytes(pPubKey);
 
-    if(P == null) 
-        return null;
-    if(y(P) % 2n == 0n)
-        P[1] = bytes_from_int(y(P));
-    else
-        P[1] = bytes_from_int(babyJub.p - y(P));
-}
-
-const verify_signature = (P, msg, signature) => {
-/*
-    if(y(P) % 2 == 0)
-         y(P)
-    else 
-        babyJub.p - y(P);
-*/
-    //fix_pub_key(P);  
-    
-    if(!(y(P) % 2n == 0n))
-         console.log("ouch");
-
+    //console.log("msg", msg);
+    let P = babyJub.unpackPoint(pPubKey);
+    let isOK;
     const LSign = signature.slice(0, 64);
     const RSign = signature.slice(64);
-
-    const R = big_int_from_hex(LSign); // Convert HEX to BigInt
-    const s = big_int_from_hex(RSign) // Convert HEX to BigInt
-
-    console.log("> [Verify_signature] s [BigInt/RSign]:   ",s);
-
+    const R = big_int_from_hex(LSign); 
+    const s = big_int_from_hex(RSign) 
     const concatHash = LSign + hex_from_big_int(x(P)) + msg;
-
     const e = hex_to_big_int(crypto
          .createHash("sha256")
          .update(concatHash)
          .digest("hex")) % babyJub.order;
- 
-    console.log("> [Verify_signature] e :                 ", e);
-
     const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
     const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
-
-    //console.log("> gs: ", gs);
-    //console.log("> Pe: ", Pe);
-
     const newR = babyJub.addPoint(gs, Pe);
+    if(R == x(newR)) isOK = true;
 
-    //console.log("> new Point: ", newR);
-    console.log("");
-    
-    console.log("> [Verify_signature] R:                  ", R);
-    console.log("> [Verify_signature] xnewPoint:          ", x(newR));
-
-    if(R == x(newR)){
-        console.log("\n\t\t\t\t\t  Verification is OK :)");
+    switch(type){
+            case "verKey": 
+                if(isOK) 
+                    return true;
+                else break;
+            case "verify": 
+                console.log("> [Verify_signature] R:                  ", R);
+                console.log("> [Verify_signature] xnewPoint:          ", x(newR));
+                if(isOK) console.log("\n\t\t\t\t\t  Verification is OK :)");
+                break;
+            case "default":
+                console.error("There is unknown paramaters for schnorr_sign");
     }
-
 }
 
-const geneterate_keys = () => {
+const generate_keys = (numKeys) => {
 
-    const InitPrvKeyBytes = crypto.randomBytes(32);
-    const InitPrvKeyInt = byte_array_to_int(InitPrvKeyBytes) % babyJub.order;
-    const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
-
-    let prvKey;
-
-    if (has_even_y(pubKey)) 
-        prvKey = InitPrvKeyInt;
-    else 
-        prvKey = babyJub.order - InitPrvKeyInt;
-
-    //console.log("prvKey generation:", prvKey);
-
-    const pPubKey = babyJub.packPoint(pubKey);
-   /* 
-    console.log("privateKey:",prvKey, prvKey < babyJub.order);
-    console.log("First generations pubKey:", pubKey); 
-    console.log("packet key pub in generation keys: ", pPubKey);
-    */
-    const pubKeyHex = array_bytes_to_hex(pPubKey);
-    const prvKeyHex = hex_from_big_int(prvKey);
-
-
-    let pair = {
-        publicKey: pubKeyHex,
-        privateKey: prvKeyHex,
-    };
-
+    console.log("> [Generation Key] Generating","[", numKeys,"]", "in \"../json/users.json");
+    let count = 0;
     let object = {
         $schema: "./users_schema.json",
         users: [],
     };
+    
+    while(count < numKeys){
 
-    object.users.push(pair);
+            const InitPrvKeyBytes = crypto.randomBytes(32);
+            const InitPrvKeyInt = byte_array_to_int(InitPrvKeyBytes) % babyJub.order;
+            const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
+            let prvKey;
+            if (has_even_y(pubKey)) 
+                prvKey = InitPrvKeyInt;
+            else 
+                prvKey = babyJub.order - InitPrvKeyInt;
+            const pPubKey = babyJub.packPoint(pubKey);
+            const pubKeyHex = array_bytes_to_hex(pPubKey);
+            const prvKeyHex = hex_from_big_int(prvKey);
+            const msg = array_bytes_to_hex(crypto.randomBytes(32));
 
-    make_json(object, "../json/users.json");
-    console.log("> Key pairs generated: 1 in '../json/users.json'");
-
+            const isKeyGood = verify_key_pair(msg, prvKeyHex, "verKey");           
+            if (isKeyGood) {
+                object.users.push({ publicKey: pubKeyHex, privateKey: prvKeyHex });
+                count++;
+            }
+    }
+    
+    console.log("> [Generation Key] Created","   [", numKeys,"]", "in \"../json/users.json");
+    update_users_json(object, "../json/users.json");
 };
 
-(async () => {
-    try {
-        babyJub = await buildBabyjub();
 
-        F = babyJub.F;
-        order = babyJub.order;
-
-        const msg = "hello";
-
-        
-
-        const privateKey = await return_private_key(0); // Chiama la funzione in modo asincrono
-        
-        //console.log('Private Key:', privateKey);
-        geneterate_keys();
-        sign_shnorr(msg, privateKey);
-
-    } catch (error) {
-        console.error("Si è verificato un errore:", error);
-    }
-})();
 
 
 module.exports = {
-    geneterate_keys,
+    generate_keys,
     //initializeBabyJub
 };
