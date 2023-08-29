@@ -13,7 +13,7 @@ const { version } = require('../package.json');
         const order = babyJub.order;
 
         const parser = new ArgumentParser({
-            description: 'Argparse example'
+                description: 'Command-line tool for generating and verifying Schnorr cryptographic keys and signatures.'
         });
 
         parser.add_argument('-g', '--generateKeys', { action: "store_true", help: 'Generate keys' });
