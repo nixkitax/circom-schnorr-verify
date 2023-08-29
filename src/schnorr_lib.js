@@ -3,14 +3,10 @@ const fsp = require('fs/promises');
 const crypto = require("crypto");
 const buildBabyjub = require("circomlibjs").buildBabyjub;
 const { ArgumentParser } = require('argparse');
-const { version } = require('../package.json');
 
 (async () => {
     try {
         babyJub = await buildBabyjub();
-
-        const F = babyJub.F;
-        const order = babyJub.order;
 
         const parser = new ArgumentParser({
                 description: 'Command-line tool for generating and verifying Schnorr cryptographic keys and signatures.'
@@ -149,21 +145,19 @@ const return_private_key = async (index) => {
 
 const return_public_key = async (index) => {
     try {
-        const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
+        const data = await fsp.readFile('../json/users.json', 'utf8'); 
         const jsonData = JSON.parse(data);
         const publicKey = jsonData.users[0].publicKey;
 
-        return publicKey; // Restituisce la chiave privata
+        return publicKey; 
     } catch (err) {
         console.error('Errore:', err);
-        throw err; // Rilancia l'errore per gestirlo al livello superiore
+        throw err; 
     }
 };
 
 const verify_key_pair = (msg, prvKeyHex) => {
-
     return sign_schnorr(msg, prvKeyHex, "verKey");
-
 }
 
 const update_users_json = (object, path) => {
