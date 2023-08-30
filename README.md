@@ -71,6 +71,9 @@ node schnorr-lib -v -p "Public Key" -s "Signature" -orm "Original Message"
 
 `-orm, --originalMsg`: Original message for signature verification (used with -v).
 
+`-circom, --circomJSON ` : Generate JSON for circom (used with -c).
+
+
 ## Examples
 
 1. Generate 5 key pairs:
@@ -83,6 +86,12 @@ node schnorr_lib.js -g -n 5
 
 ``` 
 node schnorr_lib.js -c -i 0 -m "Message to be signed"
+```
+
+2. Create a signature and generate input.json:
+
+``` 
+node schnorr_lib.js -c -i 0 -m "Message to be signed" -circom
 ```
 
 3. Verify a signature:
