@@ -1,25 +1,26 @@
-import fs from 'fs';
-import fsp from 'fs/promises';
 import crypto from 'crypto';
 import { buildBabyjub } from 'circomlibjs';
 import { ArgumentParser } from 'argparse';
+import fs from 'fs';
 
 import {
-  array_bytes_to_hex,
-  has_even_y,
-  big_int_from_hex,
-  byte_array_to_int,
-  hex_from_big_int,
-  hex_to_array_bytes,
-  hex_to_big_int,
-  int_to_byte_array,
+  arrayBytesToHex,
+  hasEvenY,
+  bigIntFromHex,
+  byteArrayToInt,
+  hexFromBigInt,
+  hexToArrayBytes,
+  hexToBigInt,
+  intToByteArray,
   x,
   y,
+  updateJson,
+  returnPrivateKey,
 } from './utils.js';
 
 const babyJub = await buildBabyjub();
 
-const generate_keys = numKeys => {
+const generateKeys = numKeys => {
   console.log(
     '> \x1b[32m[Generation Key] \x1b[0mGenerating',
     '[',
@@ -34,17 +35,17 @@ const generate_keys = numKeys => {
 
   while (count < numKeys) {
     const InitPrvKeyBytes = crypto.randomBytes(32);
-    const InitPrvKeyInt = byte_array_to_int(InitPrvKeyBytes) % babyJub.order;
+    const InitPrvKeyInt = byteArrayToInt(InitPrvKeyBytes) % babyJub.order;
     const pubKey = babyJub.mulPointEscalar(babyJub.Base8, InitPrvKeyInt);
     let prvKey;
-    if (has_even_y(pubKey)) prvKey = InitPrvKeyInt;
+    if (hasEvenY(pubKey)) prvKey = InitPrvKeyInt;
     else prvKey = babyJub.order - InitPrvKeyInt;
     const pPubKey = babyJub.packPoint(pubKey);
-    const pubKeyHex = array_bytes_to_hex(pPubKey);
-    const prvKeyHex = hex_from_big_int(prvKey);
-    const msg = array_bytes_to_hex(crypto.randomBytes(32));
+    const pubKeyHex = arrayBytesToHex(pPubKey);
+    const prvKeyHex = hexFromBigInt(prvKey);
+    const msg = arrayBytesToHex(crypto.randomBytes(32));
 
-    const isKeyGood = verify_key_pair(msg, prvKeyHex, 'verKey');
+    const isKeyGood = verifyKeyPair(msg, prvKeyHex, 'verKey');
     if (isKeyGood) {
       object.users.push({ publicKey: pubKeyHex, privateKey: prvKeyHex });
       count++;
@@ -56,27 +57,14 @@ const generate_keys = numKeys => {
     numKeys,
     '] keys in "../json/users.json'
   );
-  update_json(object, '../json/users.json');
+  updateJson(object, '../json/users.json');
 };
 
-const verify_key_pair = (msg, prvKeyHex) => {
-  return sign_schnorr(msg, prvKeyHex, 'verKey');
+const verifyKeyPair = (msg, prvKeyHex) => {
+  return signSchnorr(msg, prvKeyHex, 'verKey');
 };
 
-const return_private_key = async index => {
-  try {
-    const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
-    const jsonData = JSON.parse(data);
-    const privateKey = jsonData.users[index].privateKey;
-
-    return privateKey; // Restituisce la chiave privata
-  } catch (err) {
-    console.error('Errore:', err);
-    throw err; // Rilancia l'errore per gestirlo al livello superiore
-  }
-};
-
-const return_public_key = async index => {
+const returnPublicKey = async index => {
   try {
     const data = await fsp.readFile('../json/users.json', 'utf8');
     const jsonData = JSON.parse(data);
@@ -89,18 +77,13 @@ const return_public_key = async index => {
   }
 };
 
-const update_json = (object, path) => {
-  const jsonString = JSON.stringify(object, null, 2);
-  fs.writeFileSync(path, jsonString);
-};
-
-const sign_schnorr = (msg, privateKey, type) => {
-  const d0 = hex_to_big_int(privateKey);
+const signSchnorr = (msg, privateKey, type) => {
+  const d0 = hexToBigInt(privateKey);
   if (d0 > babyJub.order - 1n)
     throw new Error('prvKey has to be minor than order-1 ');
   let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
   let d; //private key
-  if (has_even_y(P)) d = d0;
+  if (hasEvenY(P)) d = d0;
   else d = babyJub.order - d0;
   const nonceValue = crypto.randomBytes(32);
   const hashMsg = crypto
@@ -111,139 +94,137 @@ const sign_schnorr = (msg, privateKey, type) => {
     .createHash('sha256')
     .update(hashMsg + nonceValue + msg)
     .digest('hex');
-  const k0 = hex_to_big_int(combinedHash) % babyJub.order;
+  const k0 = hexToBigInt(combinedHash) % babyJub.order;
   const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
-  const concatHash = hex_from_big_int(x(r)) + hex_from_big_int(x(P)) + msg;
+  const concatHash = hexFromBigInt(x(r)) + hexFromBigInt(x(P)) + msg;
   const e =
-    hex_to_big_int(
-      crypto.createHash('sha256').update(concatHash).digest('hex')
-    ) % babyJub.order;
-  const LSign = hex_from_big_int(x(r));
-  const RSign = hex_from_big_int((k0 + d * e) % babyJub.order);
+    hexToBigInt(crypto.createHash('sha256').update(concatHash).digest('hex')) %
+    babyJub.order;
+  const LSign = hexFromBigInt(x(r));
+  const RSign = hexFromBigInt((k0 + d * e) % babyJub.order);
   const pPubKey = babyJub.packPoint(P);
   const signature = LSign.concat(RSign);
 
   switch (type) {
     case 'verKey':
-      return verify_signature(pPubKey, msg, signature, 'verKey');
+      return verifySignature(pPubKey, msg, signature, 'verKey');
     case 'sign':
       console.log('');
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0md:            ', d);
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0mk             ', k0);
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0me:            ', e);
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0mx(r):         ', x(r));
+      console.log('> \x1b[32m[signSchnorr] \x1b[0md:            ', d);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0mk             ', k0);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0me:            ', e);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0mx(r):         ', x(r));
       console.log(
-        '> \x1b[32m[Sign_Schnorr] \x1b[0mn:            ',
+        '> \x1b[32m[signSchnorr] \x1b[0mn:            ',
         babyJub.order
       );
       console.log('');
       console.log(
-        '> \x1b[32m[Sign_Schnorr] \x1b[0m[LSign][RSign] (bigInt): ',
+        '> \x1b[32m[signSchnorr] \x1b[0m[LSign][RSign] (bigInt): ',
         '\n\n\t   [',
-        big_int_from_hex(LSign),
+        bigIntFromHex(LSign),
         ']\n\t   [',
-        big_int_from_hex(RSign),
+        bigIntFromHex(RSign),
         ']\n'
       );
       console.log(
-        '> \x1b[32m[Sign_Schnorr] \x1b[0m([LSign][RSign]) (HEX): ',
+        '> \x1b[32m[signSchnorr] \x1b[0m([LSign][RSign]) (HEX): ',
         '\n\n\t   [',
         LSign + RSign,
         ']\n'
       );
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0mmessage:      ', msg);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0mmessage:      ', msg);
       console.log(
-        '> \x1b[32m[Sign_Schnorr]\x1b[0m publicKey:    ',
-        array_bytes_to_hex(pPubKey)
+        '> \x1b[32m[signSchnorr]\x1b[0m publicKey:    ',
+        arrayBytesToHex(pPubKey)
       );
-      console.log('> \x1b[32m[Sign_Schnorr]\x1b[0m privateKey:   ', privateKey);
+      console.log('> \x1b[32m[signSchnorr]\x1b[0m privateKey:   ', privateKey);
 
-      var isOK = verify_signature(pPubKey, msg, signature, 'verKey');
+      var isOK = verifySignature(pPubKey, msg, signature, 'verKey');
       if (isOK) {
         console.log(
-          '> \x1b[32m[Sign_Schnorr]\x1b[0m Sign status:   \x1b[32mokay\x1b[0m '
+          '> \x1b[32m[signSchnorr]\x1b[0m Sign status:   \x1b[32mokay\x1b[0m '
         );
       } else
         console.log(
-          '> \x1b[32m[Sign_Schnorr]\x1b[0m Sign status:   \x1b[31mnot okay\x1b[0m'
+          '> \x1b[32m[signSchnorr]\x1b[0m Sign status:   \x1b[31mnot okay\x1b[0m'
         );
       console.log('');
-      //console.log( hex_to_array_bytes(array_bytes_to_hex(pPubKey)))
-      //return verify_signature(pPubKey, msg, signature, "verify");
+      //console.log( hexToArrayBytes(arrayBytesToHex(pPubKey)))
+      //return verifySignature(pPubKey, msg, signature, "verify");
       break;
     case 'signC':
       console.log('');
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0md:            ', d);
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0mk             ', k0);
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0me:            ', e);
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0mx(r):         ', x(r));
+      console.log('> \x1b[32m[signSchnorr] \x1b[0md:            ', d);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0mk             ', k0);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0me:            ', e);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0mx(r):         ', x(r));
       console.log(
-        '> \x1b[32m[Sign_Schnorr] \x1b[0mn:            ',
+        '> \x1b[32m[signSchnorr] \x1b[0mn:            ',
         babyJub.order
       );
       console.log('');
       console.log(
-        '> \x1b[32m[Sign_Schnorr] \x1b[0m[LSign][RSign] (bigInt): ',
+        '> \x1b[32m[signSchnorr] \x1b[0m[LSign][RSign] (bigInt): ',
         '\n\n\t   [',
-        big_int_from_hex(LSign),
+        bigIntFromHex(LSign),
         ']\n\t   [',
-        big_int_from_hex(RSign),
+        bigIntFromHex(RSign),
         ']\n'
       );
       console.log(
-        '> \x1b[32m[Sign_Schnorr] \x1b[0m([LSign][RSign]) (HEX): ',
+        '> \x1b[32m[signSchnorr] \x1b[0m([LSign][RSign]) (HEX): ',
         '\n\n\t   [',
         LSign + RSign,
         ']\n'
       );
-      console.log('> \x1b[32m[Sign_Schnorr] \x1b[0mmessage:      ', msg);
+      console.log('> \x1b[32m[signSchnorr] \x1b[0mmessage:      ', msg);
       console.log(
-        '> \x1b[32m[Sign_Schnorr]\x1b[0m publicKey:    ',
-        array_bytes_to_hex(pPubKey)
+        '> \x1b[32m[signSchnorr]\x1b[0m publicKey:    ',
+        arrayBytesToHex(pPubKey)
       );
-      console.log('> \x1b[32m[Sign_Schnorr]\x1b[0m privateKey:   ', privateKey);
+      console.log('> \x1b[32m[signSchnorr]\x1b[0m privateKey:   ', privateKey);
 
-      var isOK = verify_signature(pPubKey, msg, signature, 'verKey');
+      var isOK = verifySignature(pPubKey, msg, signature, 'verKey');
       if (isOK) {
         console.log(
-          '> \x1b[32m[Sign_Schnorr]\x1b[0m Sign status:   \x1b[32mokay\x1b[0m '
+          '> \x1b[32m[signSchnorr]\x1b[0m Sign status:   \x1b[32mokay\x1b[0m '
         );
         const jsonObject = {
           LSign: signature.slice(0, 64),
           RSign: signature.slice(64),
           msg: msg,
-          pPub: array_bytes_to_hex(pPubKey),
+          pPub: arrayBytesToHex(pPubKey),
         };
-        update_json(jsonObject, '../json/input.json');
+        updateJson(jsonObject, '../json/input.json');
         console.log(
-          '\n> \x1b[32m[Sign_Schnorr]\x1b[0m Created\x1b[34m input.json \x1b[0mfor circom!'
+          '\n> \x1b[32m[signSchnorr]\x1b[0m Created\x1b[34m input.json \x1b[0mfor circom!'
         );
       } else
         console.log(
-          '> \x1b[32m[Sign_Schnorr]\x1b[0m Sign status:   \x1b[31mnot okay\x1b[0m'
+          '> \x1b[32m[signSchnorr]\x1b[0m Sign status:   \x1b[31mnot okay\x1b[0m'
         );
-      //console.log( hex_to_array_bytes(array_bytes_to_hex(pPubKey)))
-      //return verify_signature(pPubKey, msg, signature, "verify");
+      //console.log( hexToArrayBytes(arrayBytesToHex(pPubKey)))
+      //return verifySignature(pPubKey, msg, signature, "verify");
       break;
     case 'default':
       console.error('There is unknown paramaters for schnorr_sign');
   }
 };
 
-const verify_signature = (pPubKey, msg, signature, type) => {
-  if (type == 'verify') pPubKey = hex_to_array_bytes(pPubKey);
+const verifySignature = (pPubKey, msg, signature, type) => {
+  if (type == 'verify') pPubKey = hexToArrayBytes(pPubKey);
 
   let P = babyJub.unpackPoint(pPubKey);
   let isOK;
   const LSign = signature.slice(0, 64);
   const RSign = signature.slice(64);
-  const R = big_int_from_hex(LSign);
-  const s = big_int_from_hex(RSign);
-  const concatHash = LSign + hex_from_big_int(x(P)) + msg;
+  const R = bigIntFromHex(LSign);
+  const s = bigIntFromHex(RSign);
+  const concatHash = LSign + hexFromBigInt(x(P)) + msg;
   const e =
-    hex_to_big_int(
-      crypto.createHash('sha256').update(concatHash).digest('hex')
-    ) % babyJub.order;
+    hexToBigInt(crypto.createHash('sha256').update(concatHash).digest('hex')) %
+    babyJub.order;
   const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
   const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
   const newR = babyJub.addPoint(gs, Pe);
@@ -254,12 +235,12 @@ const verify_signature = (pPubKey, msg, signature, type) => {
       if (isOK) return true;
       else break;
     case 'verify':
-      console.log('> [Verify_signature] R:                  ', R);
-      console.log('> [Verify_signature] xnewPoint:          ', x(newR));
+      console.log('> [verifySignature] R:                  ', R);
+      console.log('> [verifySignature] xnewPoint:          ', x(newR));
       if (isOK) console.log('\n\t\t\t\t\t  Verification is OK :)');
       break;
     case 'default':
-      console.error('There is unknown paramaters for verify_signature');
+      console.error('There is unknown paramaters for verifySignature');
   }
 };
 
@@ -295,7 +276,7 @@ const verify_signature = (pPubKey, msg, signature, type) => {
       type: String,
       help: 'Message to sign',
       required: false,
-      default: array_bytes_to_hex(crypto.randomBytes(32)),
+      default: arrayBytesToHex(crypto.randomBytes(32)),
     });
     parser.add_argument('-v', '--verifySign', {
       action: 'store_true',
@@ -327,7 +308,7 @@ const verify_signature = (pPubKey, msg, signature, type) => {
     });
 
     const args = parser.parse_args();
-    if (args.generateKeys) generate_keys(args.number);
+    if (args.generateKeys) generateKeys(args.number);
     if (args.createSignature) {
       if (fs.existsSync('../json/users.json')) {
         fs.readFile('../json/users.json', 'utf8', async (err, data) => {
@@ -346,10 +327,9 @@ const verify_signature = (pPubKey, msg, signature, type) => {
               );
               process.exit(1);
             }
-            const privateKey = await return_private_key(args.index);
-            if (args.circomJSON)
-              sign_schnorr(args.message, privateKey, 'signC');
-            else sign_schnorr(args.message, privateKey, 'sign');
+            const privateKey = await returnPrivateKey(args.index);
+            if (args.circomJSON) signSchnorr(args.message, privateKey, 'signC');
+            else signSchnorr(args.message, privateKey, 'sign');
           } catch (parseError) {
             console.error('Errore nel parsing del JSON:', parseError);
           }
@@ -375,12 +355,7 @@ const verify_signature = (pPubKey, msg, signature, type) => {
           'You have to insert the original message to verify a signature, node schnorr.js -h'
         );
       //console.log(args.originalMsg);
-      verify_signature(
-        args.pPubKey,
-        args.originalMsg,
-        args.signature,
-        'verify'
-      );
+      verifySignature(args.pPubKey, args.originalMsg, args.signature, 'verify');
     }
   } catch (error) {
     console.error('Si è verificato un errore:', error);
