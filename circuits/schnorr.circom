@@ -12,71 +12,46 @@ outputs: R - [k]G, S - [k - xe]G
 
 2. VerifyMessage:
 inputs: message, public key, R, S
+
+*/
+template verifyMessage( k ) {
+
+    signal input LSign[256];
+    signal input RSign[256];
+    signal input msg[k];
+    signal input pubkey[2][256];
+
+    signal output result;
+
+    var BASE8[2] = [
+        5299619240641551281634865583518297030282874472190772894086521144482721001553,
+        16950150798460657717958625567821834550301663161624707787222815936182638968203
+    ];
+    var ORD = 21888242871839275222246405745257275088614511777268538073601725287587578984328;
+
+    component shaHash = sha256(k);
+}
+/*
+const verifySignature = (pPubKey, msg, signature, type) => {
+  if (type == 'verify') pPubKey = hexToArrayBytes(pPubKey);
+
+  let isOK;
+  let P = babyJub.unpackPoint(pPubKey);
+  const LSign = signature.slice(0, 64);
+  const RSign = signature.slice(64);
+  const R = bigIntFromHex(LSign);
+  const s = bigIntFromHex(RSign);
+  const concatHash = LSign + hexFromBigInt(x(P)) + msg;
+  const e =
+    hexToBigInt(crypto.createHash('sha256').update(concatHash).digest('hex')) %
+    babyJub.order;
+  const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
+  const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
+  const newR = babyJub.addPoint(gs, Pe);
+  if (R == x(newR)) isOK = true;
+
 */
 
-template generateSig(message, privateKey, k) {
-    
-    signal input msg[nBitsMsg];
-    
-    signal input Lsign[256]; // R : L_Sign
-    signal input Rsign[256]; // s : R_Sign
-    signal input privateKey[256];    // pubKey
-
-    signal xPubKey;
-    signal yPubKey;
-
-    component bits2pointPubKey = Bits2Point_Strict();
-
-    component extractPublicKey = BabyPbk();
-
-     for (i=0; i<254; i++) {
-        extractPublicKey.in <== privateKey[i];
-    }
-
-    xPubKey <== extractPublicKey.Ax;
-    yPubKey <== extractPublicKey.Ay;
-
-    for (i=0; i<256; i++) {
-        bits2pointA.in[i] <== A[i];
-    }
-    xPubKey <== bits2pointA.out[0];
-    yPubKey <== bits2pointA.out[1];
+component main = test();
 
 
-    // Calculate H( R || pubKey || msg):
-    // Signature 64 byte / 2  := Lsign, Rsign  
-
-
-    // shaHash(R || P || msg) := out[256]
-
-
-    //TODO: check g^s + P ^ (-e) == R ?? ==> 
-    // G ^ R_Sign + pubKey ^ (-e ) == L_Sign ???
-
-}
-
-template verifyMessage( message, publicKey, R, S) {
-
-    signal input message;
-    signal input A;
-    signal input R;
-    signal input S;
-
-    component bits2pointA = Bits2Point_Strict();
-
-    for (i=0; i<256; i++) {
-        bits2pointA.in[i] <== A[i];
-    }
-    Ax <== bits2pointA.out[0];
-    Ay <== bits2pointA.out[1];
-
-     component bits2pointA = Bits2Point_Strict();
-
-    for (i=0; i<256; i++) {
-        bits2pointA.in[i] <== A[i];
-    }
-    Ax <== bits2pointA.out[0];
-    Ay <== bits2pointA.out[1];
-
-
-}
