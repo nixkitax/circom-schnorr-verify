@@ -1,6 +1,6 @@
 {
-  "LSign": "85c823b7cf90bf8463f7aec4b167f08ed2cbb144d36f5a1abf7ecc41179a682d",
-  "RSign": "291356f8456c78c7aa1a2b5c32d8b56f56d40b93c67a6daf7dabf3300e407f6d",
-  "msg": "messaggino",
-  "pPub": "fedd5e014addcd29402f9b4f7270f03351da7ae475dac44443387d55afaf8e14"
+  "LSign": "1ed9c45d6cf11c3391c66578943002870edb7a20e3eeb8db2a6f45c39eb1d803",
+  "RSign": "8404187ee71afb14b9512043a7e518781eaa43386ca3fb4bcdd4cc51670c71c",
+  "msg": "ciao",
+  "pPub": "8fb8c2dd0d93ffb5755ab95235c12de9bd69b64bcb06851fb99ff78a9d0cc904"
 }

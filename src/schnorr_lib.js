@@ -215,8 +215,8 @@ const signSchnorr = (msg, privateKey, type) => {
 const verifySignature = (pPubKey, msg, signature, type) => {
   if (type == 'verify') pPubKey = hexToArrayBytes(pPubKey);
 
-  let P = babyJub.unpackPoint(pPubKey);
   let isOK;
+  let P = babyJub.unpackPoint(pPubKey);
   const LSign = signature.slice(0, 64);
   const RSign = signature.slice(64);
   const R = bigIntFromHex(LSign);

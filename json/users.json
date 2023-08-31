@@ -2,16 +2,12 @@
   "$schema": "./users_schema.json",
   "users": [
     {
-      "publicKey": "fedd5e014addcd29402f9b4f7270f03351da7ae475dac44443387d55afaf8e14",
-      "privateKey": "23f1f9a5c834c87f1b66ede5ae2956a46152494b02b499803f279394c3468f5"
+      "publicKey": "e58885d5c69d62370f94f111d74b953e7173992aae8880455a7392894a55068c",
+      "privateKey": "144d638a171c533ae26480cf6e188e1d9b61d10dbecae4b35579bd6a7cbe65d5"
     },
     {
-      "publicKey": "a390d2661cca8441af875186b14228e2db43f3b47da6a052295073a177cd9b8a",
-      "privateKey": "229812e8873f44b444410065c964d3ba5fd73f0ebd03db50467f7bef43021be6"
-    },
-    {
-      "publicKey": "fd5b8be05a7e4de20c621798ac7f59b1c4c7aa746f0ed06d6983c667568c7014",
-      "privateKey": "b23698158ecfa71f19f18f97d3fda2d0f52b2f2d40d10e8c1d4ec1fe22081fd"
+      "publicKey": "fd1ff97962ff367450f7c5c22f79a2d3690823b78a84947d002ac6a8fe358ca8",
+      "privateKey": "52c3607fcbfbdd293ecee318e4be2e6b8d556e16f096d242c1e456a03d39c24"
     }
   ]
 }
