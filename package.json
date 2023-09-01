@@ -17,6 +17,7 @@
     "circomlibjs": "^0.1.7",
     "crypto": "^1.0.1",
     "ffjavascript": "^0.2.60",
+    "inquirer": "^9.2.10",
     "path": "^0.12.7",
     "yargs": "^17.7.2"
   }

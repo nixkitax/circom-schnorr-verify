@@ -63,6 +63,19 @@ export const intToByteArray = intValue => {
   return byteArray;
 };
 
+export const returnPrivateKey = async index => {
+  try {
+    const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
+    const jsonData = JSON.parse(data);
+    const privateKey = jsonData.users[index].privateKey;
+
+    return privateKey; // Restituisce la chiave privata
+  } catch (err) {
+    console.error('Errore:', err);
+    throw err; // Rilancia l'errore per gestirlo al livello superiore
+  }
+};
+
 export const hexToBigInt = hexValue => {
   if (typeof hexValue !== 'string') {
     throw new Error('Input deve essere una stringa');
@@ -88,17 +101,4 @@ export const y = P => byteArrayToInt(P[1]);
 export const updateJson = (object, path) => {
   const jsonString = JSON.stringify(object, null, 2);
   fs.writeFileSync(path, jsonString);
-};
-
-export const returnPrivateKey = async index => {
-  try {
-    const data = await fsp.readFile('../json/users.json', 'utf8'); // Utilizza await per aspettare la lettura del file
-    const jsonData = JSON.parse(data);
-    const privateKey = jsonData.users[index].privateKey;
-
-    return privateKey; // Restituisce la chiave privata
-  } catch (err) {
-    console.error('Errore:', err);
-    throw err; // Rilancia l'errore per gestirlo al livello superiore
-  }
 };
