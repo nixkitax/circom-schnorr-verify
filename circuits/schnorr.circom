@@ -2,36 +2,36 @@ pragma circom 2.1.6;
 
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/babyjub.circom";
-include "./circomlib/circuits/Poseidon.circom";
+include "./circomlib/circuits/pedersen.circom";
 include "./circomlib/circuits/sha256/sha256.circom";
 include "./circomlib/circuits/pointbits.circom";
 
 
-template verifyKey(nBits){
-    signal input R[256];
-    signal input S[256];
-    signal input msg[nBits];
-    signal input pubKey[256];
+template verifyKey(){
+  
 
-    signal output newR[256];
+  signal input A[256];
+  component pointbits = Bits2Point_Strict();
 
-    var k;
 
-    component shaHash = Sha256(nBits + 512);
-
-    for(k=0; k<256; k++){
-      shaHash.in[k] <== R[k];
-      shaHash.in[k + 256] <== pubKey[k];
-    }
-    
-    for(k=0; k<nBits; k++){
-      shaHash.in[ k + 512] <== msg[k]
-    }
-
-    
 }
 /*
-    component bits2pointpubkey = Bits2Point_Strict();
+   
+
+        var k;
+
+        component shaHash = Sha256(nBits + 512);
+
+        for(k=0; k<256; k++){
+          shaHash.in[k] <== R[k];
+          shaHash.in[k + 256] <== pubKey[k];
+        }
+        
+        for(k=0; k<nBits; k++){
+          shaHash.in[ k + 512] <== msg[k]
+        }
+
+        component bits2pointpubkey = Bits2Point_Strict();
 
     for (i=0; i<256; i++) {
         bits2pointpubkey.in[i] <== pPub[i];
@@ -107,4 +107,4 @@ const verifySignature = (pPubKey, msg, signature, type) => {
 
 */
 
-component main { public [ in ] } = Location();
+component main {  } = verifyKey();
