@@ -2,10 +2,13 @@ import crypto from 'crypto';
 import fs from 'fs';
 import inquirer from 'inquirer';
 
-import { arrayBytesToHex, returnPrivateKey } from './utils.js';
-import { generateKeys } from './generateKeys.js';
-import { signSchnorr } from './signShnorr.js';
+import { arrayBytesToHex, returnPrivateKey } from './utils/utils.js';
+import { generateKeys } from './generateKeys/generateKeys.js';
+import { signSchnorr } from './signSchnorr/signSchnorr.js';
 
+/**
+ * The main function that handles user interactions and executes selected operations.
+ */
 async function main() {
   while (true) {
     try {
@@ -85,15 +88,15 @@ async function main() {
           }
         } else {
           console.error(
-            `> Error in execution: You have to generate your keys with: node schnorr_lib.js -g -n numKeys, look at https://github.com/lyylaaa/circom-schnorr-verify`
+            '> Error in execution: You have to generate your keys with: node schnorr_lib.js -g -n numKeys, look at https://github.com/lyylaaa/circom-schnorr-verify'
           );
           process.exit(1);
         }
       }
     } catch (error) {
-      console.error('Si è verificato un errore:', error);
+      console.error('An error occurred:', error);
     }
   }
 }
 
-main(); // Avvia il programma
+main(); // Start the program

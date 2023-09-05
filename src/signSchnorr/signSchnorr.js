@@ -1,5 +1,6 @@
 import { buildBabyjub } from 'circomlibjs';
 import crypto from 'crypto';
+import { buildPedersenHash } from 'circomlibjs';
 
 import {
   arrayBytesToHex,
@@ -14,36 +15,102 @@ import {
   y,
   updateJson,
   returnPrivateKey,
-} from './utils.js';
+} from '../utils/utils.js';
 
 const babyJub = await buildBabyjub();
-
+const pedersen = await buildPedersenHash();
+/**
+ * Sign a message using Schnorr signature.
+ *
+ * @param {string} msg - The message to sign as a hexadecimal string.
+ * @param {string} privateKey - The private key as a hexadecimal string.
+ * @param {string} type - The type of operation ("verKey", "sign", "signC").
+ * @returns {boolean|void} - Returns `true` if verification succeeds (for "verKey" type), otherwise `void`.
+ */
 export const signSchnorr = (msg, privateKey, type) => {
+  /**
+   * Convert the private key to a bigint.
+   *
+   * @type {bigint}
+   */
   const d0 = hexToBigInt(privateKey);
+
   if (d0 > babyJub.order - 1n)
-    throw new Error('prvKey has to be minor than order-1 ');
+    throw new Error('prvKey has to be less than order-1 ');
+
+  /**
+   * Compute the public key and determine the private key based on Y evenness.
+   *
+   * @type {object} - Point on the elliptic curve.
+   */
   let P = babyJub.mulPointEscalar(babyJub.Base8, d0);
   let d; //private key
   if (hasEvenY(P)) d = d0;
   else d = babyJub.order - d0;
+
+  /**
+   * Generate a random nonce value.
+   *
+   * @type {Buffer}
+   */
   const nonceValue = crypto.randomBytes(32);
+
+  // STILL PUT STANDARD NONCE
   const hashMsg = crypto
     .createHash('sha256')
     .update('HOPE2SEEUAGA')
     .digest('hex');
   const combinedHash = crypto
     .createHash('sha256')
-    .update(hashMsg + nonceValue + msg)
+    .update(hashMsg + nonceValue + hashMsg)
     .digest('hex');
+
+  /**
+   * Compute k0 as a bigint.
+   *
+   * @type {bigint}
+   */
   const k0 = hexToBigInt(combinedHash) % babyJub.order;
+
+  /**
+   * Compute r as a point on the elliptic curve and rp as packed point of R.
+   *
+   * @type {object} - Point on the elliptic curve.
+   */
   const r = babyJub.mulPointEscalar(babyJub.Base8, k0);
-  const concatHash = hexFromBigInt(x(r)) + hexFromBigInt(x(P)) + msg;
-  const e =
-    hexToBigInt(crypto.createHash('sha256').update(concatHash).digest('hex')) %
-    babyJub.order;
+  //const rp = babyJub.packPoint(r);
+  /**
+   * Pack the public key as an array of bytes and compute hash values.
+   *
+   * @type {string}
+   */
+  const pPubKey = babyJub.packPoint(P);
+
+  /**
+   * Compute e as a bigint.
+   *
+   * @type {bigint}
+   */
+  const composeBuff2 = new Uint8Array(64 + msg.length);
+  composeBuff2.set(intToByteArray(x(r)), 0);
+  composeBuff2.set(pPubKey, 32);
+  composeBuff2.set(msg, 64);
+  //console.log(composeBuff2);
+
+  const hmBuff = pedersen.hash(composeBuff2);
+  //console.log(byteArrayToInt(hmBuff) % babyJub.order);
+
+  //console.log(hmBuff);
+
+  //console.log(hmBuff);
+  const e = byteArrayToInt(hmBuff) % babyJub.order;
+  /**
+   * Compute LSign and RSign as hexadecimal strings.
+   *
+   * @type {string}
+   */
   const LSign = hexFromBigInt(x(r));
   const RSign = hexFromBigInt((k0 + d * e) % babyJub.order);
-  const pPubKey = babyJub.packPoint(P);
   const signature = LSign.concat(RSign);
 
   switch (type) {
@@ -153,6 +220,15 @@ export const signSchnorr = (msg, privateKey, type) => {
   }
 };
 
+/**
+ * Verify a Schnorr signature.
+ *
+ * @param {string} pPubKey - The public key as a hexadecimal string.
+ * @param {string} msg - The message as a hexadecimal string.
+ * @param {string} signature - The signature as a hexadecimal string.
+ * @param {string} type - The type of operation ("verKey", "verify").
+ * @returns {boolean|void} - Returns `true` if verification succeeds (for "verKey" type), otherwise `void`.
+ */
 const verifySignature = (pPubKey, msg, signature, type) => {
   if (type == 'verify') pPubKey = hexToArrayBytes(pPubKey);
 
@@ -162,10 +238,21 @@ const verifySignature = (pPubKey, msg, signature, type) => {
   const RSign = signature.slice(64);
   const R = bigIntFromHex(LSign);
   const s = bigIntFromHex(RSign);
-  const concatHash = LSign + hexFromBigInt(x(P)) + msg;
-  const e =
-    hexToBigInt(crypto.createHash('sha256').update(concatHash).digest('hex')) %
-    babyJub.order;
+
+  // NEED TO USE A STANDARD FOR HASH
+
+  //console.log(x(P).toString(2).length);
+
+  //console.log(hexToArrayBytes(LSign));
+  const composeBuff2 = new Uint8Array(64 + msg.length);
+  composeBuff2.set(hexToArrayBytes(LSign), 0);
+  composeBuff2.set(pPubKey, 32);
+  composeBuff2.set(msg, 64);
+  //console.log(composeBuff2);
+  const hmBuff = pedersen.hash(composeBuff2);
+  //console.log(byteArrayToInt(hmBuff) % babyJub.order);
+
+  const e = byteArrayToInt(hmBuff) % babyJub.order;
   const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
   const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
   const newR = babyJub.addPoint(gs, Pe);
@@ -180,7 +267,7 @@ const verifySignature = (pPubKey, msg, signature, type) => {
       console.log('> [verifySignature] xnewPoint:          ', x(newR));
       if (isOK) console.log('\n\t\t\t\t\t  Verification is OK :)');
       break;
-    case 'default':
-      console.error('There is unknown paramaters for verifySignature');
+    default:
+      console.error('There is an unknown parameter for verifySignature');
   }
 };

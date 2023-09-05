@@ -2,35 +2,90 @@ pragma circom 2.1.6;
 
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/babyjub.circom";
+include "./circomlib/circuits/Poseidon.circom";
 include "./circomlib/circuits/sha256/sha256.circom";
+include "./circomlib/circuits/pointbits.circom";
 
+
+template verifyKey(nBits){
+    signal input R[256];
+    signal input S[256];
+    signal input msg[nBits];
+    signal input pubKey[256];
+
+    signal output newR[256];
+
+    var k;
+
+    component shaHash = Sha256(nBits + 512);
+
+    for(k=0; k<256; k++){
+      shaHash.in[k] <== R[k];
+      shaHash.in[k + 256] <== pubKey[k];
+    }
+    
+    for(k=0; k<nBits; k++){
+      shaHash.in[ k + 512] <== msg[k]
+    }
+
+    
+}
+/*
+    component bits2pointpubkey = Bits2Point_Strict();
+
+    for (i=0; i<256; i++) {
+        bits2pointpubkey.in[i] <== pPub[i];
+    }
+    xPubKey <== bits2pointpubkey.out[0];
+    yPubKey <== bits2pointpubkey.out[1];
+
+    //hash per il messaggio
+    component shaMSG = Sha256(k);
+
+    for(var i = 0; i < k; i ++ ){
+      shaMSG.in[i] <== msg[i];
+    }
+
+    //hash per -> e
+    component sha256 = Sha256(512 + k);
+
+    for (var i = 0; i < 256; i++) {
+      sha256.in[i] <== lSign[i];
+    }
+
+    for(var i = 0; i < 256; i++){
+      sha256.in[i + 256] <== pPub[i];
+
+    }
+
+    for (var i = 0; i < k; i++){
+      sha256.in[i + 512] <== shaMSG.out[i];
+    }
+
+    for(var i = 0; i < 256; i++){
+      hash[i] = sha256.out[i]; // Use = for variable assignments
+    }
+
+    log(135);
 
 /*
-1. GenerateSig:
-inputs: message, private key, k (nonce value)
-outputs: R - [k]G, S - [k - xe]G
+    component mulFix = EscalarMulFix(256, BASE8);
 
-2. VerifyMessage:
-inputs: message, public key, R, S
+    for (i=0; i<256; i++) {
+        mulFix.e[i] <== rSign[i];
+    }
+
 
 */
-template verifyMessage( k ) {
+     // hash ( lsign + xPubKey + msg )
 
-    signal input LSign[256];
-    signal input RSign[256];
-    signal input msg[k];
-    signal input pubkey[2][256];
+    /*
+      const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
+      const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
+      const newR = babyJub.addPoint(gs, Pe);
+      if (R == x(newR)) isOK = true;
+    */
 
-    signal output result;
-
-    var BASE8[2] = [
-        5299619240641551281634865583518297030282874472190772894086521144482721001553,
-        16950150798460657717958625567821834550301663161624707787222815936182638968203
-    ];
-    var ORD = 21888242871839275222246405745257275088614511777268538073601725287587578984328;
-
-    component shaHash = sha256(k);
-}
 /*
 const verifySignature = (pPubKey, msg, signature, type) => {
   if (type == 'verify') pPubKey = hexToArrayBytes(pPubKey);
@@ -52,6 +107,4 @@ const verifySignature = (pPubKey, msg, signature, type) => {
 
 */
 
-component main = test();
-
-
+component main { public [ in ] } = Location();

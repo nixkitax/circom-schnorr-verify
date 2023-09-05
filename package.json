@@ -5,17 +5,21 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "jsdoc -d docs --configure jsdocConf.json"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "argparse": "^2.0.1",
-    "chai": "^4.3.7",
+    "chai": "^4.3.8",
     "circom_tester": "^0.0.19",
     "circomlib": "^2.0.5",
     "circomlibjs": "^0.1.7",
+    "clean-jsdoc-theme": "^4.2.10",
     "crypto": "^1.0.1",
+    "docdash": "^2.0.2",
+    "elliptic": "^6.5.4",
     "ffjavascript": "^0.2.60",
     "inquirer": "^9.2.10",
     "path": "^0.12.7",
