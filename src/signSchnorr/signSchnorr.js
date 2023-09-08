@@ -284,9 +284,9 @@ const verifySignature = (pPubKey, msg, signature, type) => {
   composeBuff2.set(msg, 64);
   //console.log('verify: ', hexToArrayBytes(msg));
   //console.log(composeBuff2);
-  const hmBuff = pedersen.hash(composeBuff2);
+  const hashBuff = pedersen.hash(composeBuff2);
   //console.log(byteArrayToInt(hmBuff) % babyJub.order);
-  const e = byteArrayToInt(hmBuff) % babyJub.order;
+  const e = byteArrayToInt(hashBuff) % babyJub.order;
   const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
   const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
   const newR = babyJub.addPoint(gs, Pe);
