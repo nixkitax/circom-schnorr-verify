@@ -107,7 +107,7 @@ export const generateKeys = numKeys => {
   }
 
   console.log(
-    '> \x1b[32m[Key Generation] \x1b[0mGenerated [',
+    '> \x1b[32m[Key Generation] \x1b[0mGenerated  [',
     numKeys,
     '] keys in "../json/users.json"'
   );
