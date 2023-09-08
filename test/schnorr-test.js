@@ -24,6 +24,45 @@ function buffer2bits(buff) {
   return res;
 }
 
+const defCircuit = () => {
+  async () => {
+    babyJub = await buildBabyjub();
+    F = babyJub.F;
+    circuit = await wasm('../circuits/schnorr.circom');
+
+    const msg = Buffer.from('ccc', 'utf-8');
+
+    const prvKey = Buffer.from(
+      '4626ec69977e73f59c4166a6b77fe0a3ee1c2cb20edd529118c29c186683bae',
+      'hex'
+    );
+    const R = Buffer.from(
+      '4626ec69977e73f59c4166a6b77fe0a3ee1c2cb20edd529118c29c186683bae',
+      'hex'
+    );
+
+    const pPubKey =
+      'd82378c8793bfe927f7302c407ab300330e0d6a906434fdae9363dbc81cbe109';
+
+    console.log(signSchnorr(msg, prvKey, 'sign'));
+
+    const msgBits = buffer2bits(msg);
+    const r8Bits = buffer2bits(pSignature.slice(0, 32));
+    const sBits = buffer2bits(pSignature.slice(32, 64));
+    const aBits = buffer2bits(pPubKey);
+
+    const w = await circuit.calculateWitness(
+      { A: aBits, R8: r8Bits, S: sBits, msg: msgBits },
+      true
+    );
+
+    await circuit.checkConstraints(w);
+  };
+};
+
+defCircuit();
+
+/*
 describe('Schnorr test', function () {
   let circuit;
   let babyJub;
@@ -67,6 +106,6 @@ describe('Schnorr test', function () {
     );
 
     await circuit.checkConstraints(w);
-    */
+    
   });
-});
+});*/

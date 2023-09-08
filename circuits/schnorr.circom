@@ -5,16 +5,62 @@ include "./circomlib/circuits/babyjub.circom";
 include "./circomlib/circuits/pedersen.circom";
 include "./circomlib/circuits/sha256/sha256.circom";
 include "./circomlib/circuits/pointbits.circom";
+include "./circomlib/circuits/escalarmulfix.circom";
+
 
 
 template verifyKey(){
   
+  //signal input R;
+  signal input sM[250];
 
-  signal input A[256];
-  component pointbits = Bits2Point_Strict();
+  signal input sP[6];
+  //signal input e;
+  //signal input msg;
 
+  var BASE8[2] = [
+    5299619240641551281634865583518297030282874472190772894086521144482721001553,
+    16950150798460657717958625567821834550301663161624707787222815936182638968203
+  ];
 
+  var order = 21888242871839275222246405745257275088614511777268538073601725287587578984328;
+
+  component sbitstonum = Bits2Num(256);
+
+  for(var i = 0; i < 6; i++){
+    sbitstonum.in[i] <== sP[i];
+  }
+
+  for( var i = 0; i<250; i++){
+    sbitstonum.in[6 + i] <== sM[i];
+  }
+
+  log(order);
+  log(sbitstonum.out);
+  
+  component gs = EscalarMulFix(256, BASE8);
+  for (var i=0; i<256; i++) {
+      gs.e[i] <== s[i];
+  }
+
+  log(gs.out[0], " ", gs.out[1]);
+  //gs.out[0] and gs.out[1]
+/*
+  component Pe = EscalarMulFix(256, BASE8);
+
+  log("gs ", gs.out[0], " ", gs.out[1]);
+  log("babyjub.order - e ", order - e);
+*/
+  
 }
+
+
+/*
+  for(var i = 0; i < 254; i++){
+    log("i", pointbits.out[i]);
+  }
+*/
+
 /*
    
 
@@ -107,4 +153,4 @@ const verifySignature = (pPubKey, msg, signature, type) => {
 
 */
 
-component main {  } = verifyKey();
+component main = verifyKey();

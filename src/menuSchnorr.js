@@ -99,4 +99,4 @@ async function main() {
   }
 }
 
-main(); // Start the program
+main();

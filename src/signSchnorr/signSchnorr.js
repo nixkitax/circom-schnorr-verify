@@ -17,6 +17,20 @@ import {
   returnPrivateKey,
 } from '../utils/utils.js';
 
+function buffer2bits(buff) {
+  const res = [];
+  for (let i = 0; i < buff.length; i++) {
+    for (let j = 0; j < 8; j++) {
+      if ((buff[i] >> j) & 1) {
+        res.push(1n);
+      } else {
+        res.push(0n);
+      }
+    }
+  }
+  return res;
+}
+
 const babyJub = await buildBabyjub();
 const pedersen = await buildPedersenHash();
 /**
@@ -92,9 +106,14 @@ export const signSchnorr = (msg, privateKey, type) => {
    * @type {bigint}
    */
   const composeBuff2 = new Uint8Array(64 + msg.length);
+
+  console.log(msg.length);
+  console.log(hexToArrayBytes(msg));
+  //console.log(hexToArrayBytes(msg).length());
   composeBuff2.set(intToByteArray(x(r)), 0);
   composeBuff2.set(pPubKey, 32);
   composeBuff2.set(msg, 64);
+  console.log('signature: ', hexToArrayBytes(msg));
   //console.log(composeBuff2);
 
   const hmBuff = pedersen.hash(composeBuff2);
@@ -104,6 +123,7 @@ export const signSchnorr = (msg, privateKey, type) => {
 
   //console.log(hmBuff);
   const e = byteArrayToInt(hmBuff) % babyJub.order;
+
   /**
    * Compute LSign and RSign as hexadecimal strings.
    *
@@ -198,11 +218,28 @@ export const signSchnorr = (msg, privateKey, type) => {
         console.log(
           '> \x1b[32m[signSchnorr]\x1b[0m Sign status:   \x1b[32mokay\x1b[0m '
         );
+
+        const SJson =
+          '0'.repeat(256 - bigIntFromHex(RSign).toString(2).length) +
+          bigIntFromHex(RSign).toString(2);
+
+        console.log(
+          '> RSign => ',
+          bigIntFromHex(RSign),
+          '\n> RSign binary => ',
+          SJson,
+          '\n> RSign array binary => ',
+          SJson.split('').map(Number)
+        );
+
+        //console.log(pPubBits);
+        //console.log(buffer2bits(Buffer.from(bigIntFromHex(LSign), 'hex')));
+        const numtest = 3;
         const jsonObject = {
-          LSign: signature.slice(0, 64),
-          RSign: signature.slice(64),
+          LSign: bigIntFromHex(LSign).toString(),
+          RSign: SJson.split('').map(Number),
           msg: msg,
-          pPub: arrayBytesToHex(pPubKey),
+          pPub: byteArrayToInt(pPubKey).toString(),
         };
         updateJson(jsonObject, '../json/input.json');
         console.log(
@@ -239,8 +276,6 @@ const verifySignature = (pPubKey, msg, signature, type) => {
   const R = bigIntFromHex(LSign);
   const s = bigIntFromHex(RSign);
 
-  // NEED TO USE A STANDARD FOR HASH
-
   //console.log(x(P).toString(2).length);
 
   //console.log(hexToArrayBytes(LSign));
@@ -248,10 +283,10 @@ const verifySignature = (pPubKey, msg, signature, type) => {
   composeBuff2.set(hexToArrayBytes(LSign), 0);
   composeBuff2.set(pPubKey, 32);
   composeBuff2.set(msg, 64);
+  //console.log('verify: ', hexToArrayBytes(msg));
   //console.log(composeBuff2);
   const hmBuff = pedersen.hash(composeBuff2);
   //console.log(byteArrayToInt(hmBuff) % babyJub.order);
-
   const e = byteArrayToInt(hmBuff) % babyJub.order;
   const gs = babyJub.mulPointEscalar(babyJub.Base8, s);
   const Pe = babyJub.mulPointEscalar(P, babyJub.order - e);
@@ -263,6 +298,7 @@ const verifySignature = (pPubKey, msg, signature, type) => {
       if (isOK) return true;
       else break;
     case 'verify':
+      console.log('> [verifySignature] e                   ', e);
       console.log('> [verifySignature] R:                  ', R);
       console.log('> [verifySignature] xnewPoint:          ', x(newR));
       if (isOK) console.log('\n\t\t\t\t\t  Verification is OK :)');

@@ -2,8 +2,8 @@
   "$schema": "./users_schema.json",
   "users": [
     {
-      "publicKey": "fdf3d2f4527e19923cfe088812bb68bf7084c1824d5002c36a5ff8a37a323302",
-      "privateKey": "fa8ed5c94b6f5b0b9fbd6a7fc5461bab1dbcff0d05c4e04feb6df64a128bdc1"
+      "publicKey": "1002ad4106109844e58e425297ec594bfcd4a672f536c2b261dd315829cc5c1d",
+      "privateKey": "22bc6615d3077ce1d633cda8e44274bf011d11a911adb10277a280be84810db5"
     }
   ]
 }
