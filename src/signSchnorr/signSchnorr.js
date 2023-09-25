@@ -217,10 +217,6 @@ export const signSchnorr = (msg, privateKey, type) => {
         console.log(
           '> \x1b[32m[signSchnorr]\x1b[0m Sign status:   \x1b[32mokay\x1b[0m '
         );
-
-        const SJson =
-          '0'.repeat(256 - bigIntFromHex(RSign).toString(2).length) +
-          bigIntFromHex(RSign).toString(2);
         /*
         console.log(
           '> RSign => ',
@@ -230,13 +226,13 @@ export const signSchnorr = (msg, privateKey, type) => {
           '\n> RSign array binary => ',
           SJson.split('').map(Number)
         );
+        
 */
         //console.log(pPubBits);
         //console.log(buffer2bits(Buffer.from(bigIntFromHex(LSign), 'hex')));
-        const numtest = 3;
         const jsonObject = {
           LSign: bigIntFromHex(LSign).toString(),
-          RSign: SJson.split('').map(Number),
+          RSign: bigIntFromHex(RSign).toString(),
           msg: msg,
           pPub: byteArrayToInt(pPubKey).toString(),
         };

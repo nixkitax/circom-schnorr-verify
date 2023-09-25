@@ -35,7 +35,6 @@ async function main() {
             default: 1,
           },
         ]);
-
         generateKeys(numKeysAnswers.number);
       } else if (answers.operation === 'Create a signature') {
         const signatureAnswers = await inquirer.prompt([

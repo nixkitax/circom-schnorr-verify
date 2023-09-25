@@ -1,0 +1,13 @@
+{
+  "$schema": "./users_schema.json",
+  "users": [
+    {
+      "publicKey": "5c24fbfe2f1e4c9b74882e845abb7a06851150ebbea2c615304250029b5df729",
+      "privateKey": "1f23d8b6a322e59e833a650dcbc68448f83067bf8d57866c1e5d349c4423d5b9"
+    },
+    {
+      "publicKey": "77ade4482c52b26549ac6a9fa9727c9406f594c32b27691d7ab58fd386f00e25",
+      "privateKey": "cfb8867ddf25716a536e397550bd2719c81ce1063d4be79a5c454a036000261"
+    }
+  ]
+}
