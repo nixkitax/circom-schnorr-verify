@@ -1,5 +1,5 @@
 pragma circom 2.1.6;
 
-include "../../../circuits/test2.circom";
+include "../../../circuits/countEquals.circom";
 
-component main {public [x, y]} = ciauz();
+component main {public [x, y]} = countEquals(10);

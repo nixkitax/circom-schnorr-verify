@@ -39,12 +39,13 @@ const produceInputCircuit = () => {
 let circuit = await wasm_tester(
   path.join(process.cwd(), 'circuits', 'schnorr_test.circom')
 );
+
 /*
 const { LSign, RSign, msg, pPub } = produceInputCircuit();
 
 const buffMsg = Buffer.from(msg, 'hex');
 const bitsMsg = buffer2bits(buffMsg);
 */
-let witness = await circuit.calculateWitness({ x: 4, y: 6 });
+let witness = await circuit.calculateWitness({ enabled: 1, x: 4, y: 4 });
 
 console.log(witness);
