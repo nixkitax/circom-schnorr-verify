@@ -60,11 +60,11 @@ Enter the index of the private key to use.
 You can also generate JSON for Circom by selecting the corresponding option.
 The signature will be created and displayed on the screen.
 
-# Future steps
+# Test verifyKeySchnorrGroup.circom circuit
 
-The upcoming steps for this project include:
-
-JSON Processing for Circom Integration: The next immediate step involves processing the generated JSON data containing Schnorr keys to seamlessly integrate them into a Circom circuit. This step is crucial for demonstrating the cryptographic verification process within the circuit framework.
+```
+ circom schnorr_test.circom -l ../../../node_modules
+```
 
 # Acknowledgments
 

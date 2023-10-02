@@ -7,6 +7,17 @@ include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/escalarmulany.circom";
 include "./circomlib/circuits/escalarmulfix.circom";
 
+template isTheSame() {
+    signal input in[2];
+    signal output out;
+
+    component isz = IsZero();
+
+    in[1] - in[0] ==> isz.in;
+
+    isz.out ==> out;
+}
+
 template Schnorr(gx, gy){
     signal input enabled;
     signal input message;
@@ -15,7 +26,9 @@ template Schnorr(gx, gy){
     signal input pubY;
 
     signal input S;
-    signal input e; 
+    signal input e;
+
+    signal output out;
 
     // Trasforming S to bits
     component snum2bits = Num2Bits(253);
@@ -57,10 +70,11 @@ template Schnorr(gx, gy){
     ev.inputs[2] <== message;
 
      // 4) Check if e == ev
-    component eqCheck = ForceEqualIfEnabled();
-    eqCheck.enabled <== enabled;
+    component eqCheck = isTheSame();
     eqCheck.in[0] <== e;
     eqCheck.in[1] <== ev.out;
+
+    out <== eqCheck.out
 
 }
 

@@ -28,7 +28,6 @@ template countEquals(N){
         ise[i] = isTheSame();
     }
 
-
     for(i = 0; i < N; i++){
         ise[i].in[0] <== x[i];
         ise[i].in[1] <== y[i];
@@ -36,6 +35,6 @@ template countEquals(N){
     }
 
     out <== sum;
-    log("The expected result is ", N," but the value of a is",out);
+    log("The expected result is ", N," and the value of same items is",out);
 
 }
