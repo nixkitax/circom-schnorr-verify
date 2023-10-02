@@ -13,6 +13,7 @@ class Schnorr {
     this.poseidon = poseidon;
     this.F = babyJub.F;
   }
+
   //converts our private key to our public key
   prv2pub(prv) {
     let pub = this.babyJub.mulPointEscalar(this.babyJub.Base8, prv); //pub  = g^prv where g is the base point of babyjub
@@ -38,8 +39,10 @@ class Schnorr {
       s: s,
     };
   }
+
   //signature = (s,e)
   //verifies that e_v and e are the same
+
   verifyPoseidon(sig, y, msg) {
     const F = this.babyJub.F;
     // Check parameters for schnorr

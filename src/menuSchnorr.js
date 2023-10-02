@@ -5,6 +5,7 @@ import inquirer from 'inquirer';
 import { arrayBytesToHex, returnPrivateKey } from './utils/utils.js';
 import { generateKeys } from './generateKeys/generateKeys.js';
 import { signSchnorr } from './signSchnorr/signSchnorr.js';
+import { generateWitness } from './test/getCircuit.js';
 
 /**
  * The main function that handles user interactions and executes selected operations.
@@ -17,7 +18,12 @@ async function main() {
           type: 'list',
           name: 'operation',
           message: 'Select operation:',
-          choices: ['Generate keys', 'Create a signature', 'Exit'],
+          choices: [
+            'Generate keys               [Tapyrus Schnorr Signature]',
+            'Create a signature          [Tapyrus Schnorr Signature]',
+            'Verify and generate witness [./circuits/verifyKeySchnorrGroup.circom]',
+            'Exit',
+          ],
         },
       ]);
 
@@ -26,7 +32,18 @@ async function main() {
         process.exit(0);
       }
 
-      if (answers.operation === 'Generate keys') {
+      if (
+        answers.operation ===
+        'Verify and generate witness [./circuits/verifyKeySchnorrGroup.circom]'
+      ) {
+        console.log('loading...');
+        generateWitness();
+      }
+
+      if (
+        answers.operation ===
+        'Generate keys               [Tapyrus Schnorr Signature]'
+      ) {
         const numKeysAnswers = await inquirer.prompt([
           {
             type: 'number',
@@ -36,7 +53,10 @@ async function main() {
           },
         ]);
         generateKeys(numKeysAnswers.number);
-      } else if (answers.operation === 'Create a signature') {
+      } else if (
+        answers.operation ===
+        'Create a signature          [Tapyrus Schnorr Signature]'
+      ) {
         const signatureAnswers = await inquirer.prompt([
           {
             type: 'input',

@@ -75,10 +75,6 @@ export const signSchnorr = (msg, privateKey, type) => {
 
   const e = byteArrayToInt(hmBuff) % babyJub.order;
 
-  const prova = Scalar.sub(k0, Scalar.mul(d, e));
-  console.log(prova);
-  console.log((k0 + d * e) % babyJub.order);
-
   const LSign = hexFromBigInt(x(r));
   const RSign = hexFromBigInt((k0 + d * e) % babyJub.order);
   const signature = LSign.concat(RSign);
