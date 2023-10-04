@@ -60,12 +60,6 @@ Enter the index of the private key to use.
 You can also generate JSON for Circom by selecting the corresponding option.
 The signature will be created and displayed on the screen.
 
-# Test verifyKeySchnorrGroup.circom circuit
-
-```
- circom schnorr_test.circom -l ../../../node_modules
-```
-
 # Acknowledgments
 
 This tool utilizes the Schnorr algorithm and various cryptographic operations from circomlibjs. It provides a convenient command-line interface for key generation, signature creation, and signature verification.

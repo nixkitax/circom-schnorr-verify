@@ -91,7 +91,6 @@ template Schnorr(gx, gy){
 
 }
 
-
 template verifyKeySchnorrGroup(N){
 
     signal input enabled;
