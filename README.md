@@ -1,8 +1,8 @@
-<br>
-<p align="center">
-  <img src="./images/logo.png" width="200" height="200">
-</p>
-<br>
+   <br>
+   <p align="center">
+   <img src="./images/logo.png" width="200" height="200">
+   </p>
+   <br>
 
 # Purpose
 
@@ -18,23 +18,23 @@ The primary objectives of this project are as follows:
 
 The project is structured as follows:
 
-1. Schnorr Key Generation Tool
-   The command-line tool (schnorr_lib.js) is designed to provide a user-friendly interface for generating cryptographic keys, signing messages, and verifying signatures using the Schnorr algorithm. The tool employs Node.js and leverages the argparse library for handling command-line options.
+1.  Schnorr Key Generation Tool
+    The command-line tool (schnorr_lib.js) is designed to provide a user-friendly interface for generating cryptographic keys, signing messages, and verifying signatures using the Schnorr algorithm. The tool employs Node.js and leverages the argparse library for handling command-line options.
 
-2. Circom Integration
-   One of the pivotal components of the project involves integrating the generated Schnorr keys with the Circom framework. This entails implementing key verification within a Circom circuit, thereby showcasing the practical application of cryptographic operations within the circuit context.
+2.  Circom Integration
+    One of the pivotal components of the project involves integrating the generated Schnorr keys with the Circom framework. This entails implementing key verification within a Circom circuit, thereby showcasing the practical application of cryptographic operations within the circuit context.
 
-3. zkSNARK Proof Generation
-   The final phase of the project explores the generation of zkSNARK proofs for the verification of Schnorr signatures. By utilizing zkSNARKs, the project aims to demonstrate the ability to generate succinct proofs that verify the authenticity of Schnorr signatures without revealing private information.
+3.  zkSNARK Proof Generation
+    The final phase of the project explores the generation of zkSNARK proofs for the verification of Schnorr signatures. By utilizing zkSNARKs, the project aims to demonstrate the ability to generate succinct proofs that verify the authenticity of Schnorr signatures without revealing private information.
 
 ## Installation
 
-1. Clone or download this repository to your local machine.
-2. Make sure you have all dependencies installed by running the following command in the project directory:
+1.  Clone or download this repository to your local machine.
+2.  Make sure you have all dependencies installed by running the following command in the project directory:
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 ## Usage
 

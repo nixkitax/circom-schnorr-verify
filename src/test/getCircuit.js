@@ -3,9 +3,7 @@ import circom_tester from 'circom_tester';
 import { buildBabyjub, buildPoseidon } from 'circomlibjs';
 import { Scalar } from 'ffjavascript';
 import crypto from 'crypto';
-
 import { buildSchnorr } from '../utils/schnorrhelper.js';
-import fs from 'fs';
 import { updateJson } from '../utils/utils.js';
 
 const wasm_tester = circom_tester.wasm;
@@ -21,7 +19,6 @@ const generateRandomBigInt = maxBits => {
   const words = Math.ceil(maxBits / 32);
   const arr = new Uint32Array(words);
   crypto.getRandomValues(arr);
-  // clear any excess bits in the last word
   const excessBits = words * 32 - maxBits;
   if (excessBits > 0) {
     const mask = (1 << (32 - excessBits)) - 1;
@@ -49,26 +46,18 @@ export const generateWitness = (message, number, index) => {
     let publicKeysX = [];
     let publicKeysY = [];
 
-    // Genera il numero specificato di coppie di chiavi private/pubbliche
     for (let i = 0; i < number; i++) {
       const prvKey = generateRandomBigInt(253);
       const pubKey = schnorr.prv2pub(prvKey);
-
       privateKeys.push(prvKey);
       publicKeysX.push(F.toObject(pubKey[0]).toString());
       publicKeysY.push(F.toObject(pubKey[1]).toString());
     }
 
-    //random integer selected by the verifier
     const k = generateRandomBigInt(253);
-
-    // Choose the private key to use based on the specified index
     const prvKey = privateKeys[index];
     const pubKey = schnorr.prv2pub(prvKey);
-
-    //obtain the signature
     const signature = schnorr.signPoseidon(prvKey, msg, k);
-    //verify that everything is correct
 
     if (schnorr.verifyPoseidon(signature, pubKey, msg)) {
       let input = {

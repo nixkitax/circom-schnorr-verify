@@ -14,13 +14,11 @@ class Schnorr {
     this.F = babyJub.F;
   }
 
-  //converts our private key to our public key
   prv2pub(prv) {
     let pub = this.babyJub.mulPointEscalar(this.babyJub.Base8, prv); //pub  = g^prv where g is the base point of babyjub
     return pub;
   }
 
-  //calculates the signature for schnorr
   signPoseidon(prv, msg, k) {
     //calulcate r = g^k
     const F = this.babyJub.F;
