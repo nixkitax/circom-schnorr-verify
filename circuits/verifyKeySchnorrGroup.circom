@@ -130,6 +130,6 @@ template verifyKeySchnorrGroup(N){
     component isLessThan = isLessThan(30);
     isLessThan.in[0] <== sum;
     isLessThan.in[1] <== MIN;
-
+    
 }
 

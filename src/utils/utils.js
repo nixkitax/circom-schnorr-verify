@@ -1,7 +1,7 @@
 import fs from 'fs';
 import fsp from 'fs/promises';
-import { Scalar } from 'ffjavascript';
-import { buildBabyjub, buildPoseidon } from 'circomlibjs';
+import crypto from 'crypto';
+import { exec } from 'child_process';
 
 export const hasEvenY = P => y(P) % 2n == 0n;
 
@@ -102,4 +102,33 @@ export const y = P => byteArrayToInt(P[1]);
 export const updateJson = (object, path) => {
   const jsonString = JSON.stringify(object, null, 2);
   fs.writeFileSync(path, jsonString);
+};
+
+export const stringToBigInt = input => {
+  const hash = crypto.createHash('sha256').update(input).digest('hex');
+  return BigInt(`0x${hash}`);
+};
+
+export const generateRandomBigInt = maxBits => {
+  const words = Math.ceil(maxBits / 32);
+  const arr = new Uint32Array(words);
+  crypto.getRandomValues(arr);
+  const excessBits = words * 32 - maxBits;
+  if (excessBits > 0) {
+    const mask = (1 << (32 - excessBits)) - 1;
+    arr[words - 1] &= mask;
+  }
+  return BigInt(arr.join(''));
+};
+
+export const getR1CSInfo = circuitName => {
+  exec(`circom test/circuits/${circuitName} --r1cs `, (error, stdout) => {
+    if (error) {
+      console.error(
+        `Errore durante l'esecuzione del comando: ${error.message}`
+      );
+      return;
+    }
+    console.log(`${stdout}`);
+  });
 };

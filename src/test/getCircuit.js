@@ -1,31 +1,17 @@
 import path from 'path';
 import circom_tester from 'circom_tester';
-import { buildBabyjub, buildPoseidon } from 'circomlibjs';
-import { Scalar } from 'ffjavascript';
-import crypto from 'crypto';
+import { buildBabyjub } from 'circomlibjs';
 import { buildSchnorr } from '../utils/schnorrhelper.js';
-import { updateJson } from '../utils/utils.js';
+import {
+  updateJson,
+  stringToBigInt,
+  generateRandomBigInt,
+  getR1CSInfo,
+} from '../utils/utils.js';
 
 const wasm_tester = circom_tester.wasm;
+const circuitName = 'schnorr_test.circom';
 let schnorr, babyJub, F;
-var num_constraints;
-
-const stringToBigInt = input => {
-  const hash = crypto.createHash('sha256').update(input).digest('hex');
-  return BigInt(`0x${hash}`);
-};
-
-const generateRandomBigInt = maxBits => {
-  const words = Math.ceil(maxBits / 32);
-  const arr = new Uint32Array(words);
-  crypto.getRandomValues(arr);
-  const excessBits = words * 32 - maxBits;
-  if (excessBits > 0) {
-    const mask = (1 << (32 - excessBits)) - 1;
-    arr[words - 1] &= mask;
-  }
-  return BigInt(arr.join(''));
-};
 
 export const generateWitness = (message, number, index) => {
   (async () => {
@@ -33,14 +19,14 @@ export const generateWitness = (message, number, index) => {
     babyJub = await buildBabyjub();
     F = babyJub.F;
     let circuit = await wasm_tester(
-      path.join(process.cwd(), '/test/circuits', 'schnorr_test.circom')
+      path.join(process.cwd(), '/test/circuits', circuitName)
     );
     await circuit.loadConstraints();
-    num_constraints = circuit.constraints.length;
-    console.log('Schnorr #Constraints:', num_constraints);
 
     let msg = F.e(stringToBigInt(message));
     msg = F.toObject(msg);
+
+    getR1CSInfo(circuitName);
 
     let privateKeys = [];
     let publicKeysX = [];
@@ -70,7 +56,6 @@ export const generateWitness = (message, number, index) => {
       };
 
       console.log(input);
-
       updateJson(input, '../json/inputCircuit.json');
 
       const w = await circuit.calculateWitness(input, true);
